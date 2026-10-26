@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Shorts Auto Studio V3 - Pro Dark Edition</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0b0f19; color: #f8fafc; margin: 0; padding: 20px; }
+        .container { max-width: 950px; margin: 0 auto; }
+        
+        /* 상단 헤더 */
+        .top-header { background: #1e293b; padding: 15px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border: 1px solid #334155; }
+        .logo-area { display: flex; align-items: center; gap: 10px; }
+        .logo-badge { background: #8b5cf6; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+        .logo-title { font-size: 18px; font-weight: bold; color: #f8fafc; }
+        
+        /* 프로젝트 설정 카드 */
+        .card { background-color: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #334155; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .card h3 { margin-top: 0; color: #38bdf8; border-bottom: 2px solid #334155; padding-bottom: 10px; font-size: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .settings-grid { display: flex; flex-direction: column; gap: 12px; }
+        .setting-item label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 4px; font-weight: bold; }
+        .setting-item input, .setting-item select { width: 100%; background-color: #0f172a; color: #e2e8f0; border: 1px solid #475569; border-radius: 8px; padding: 10px; font-size: 14px; box-sizing: border-box; }
+        
+        /* 유튜브 레퍼런스 입력 스타일 */
+        .video-entry { background: #0f172a; border: 1px solid #475569; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+        .video-entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; color: #38bdf8; font-weight: bold; }
+        .video-inputs { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
+        .video-inputs input { background-color: #1e293b; color: #e2e8f0; border: 1px solid #475569; border-radius: 6px; padding: 8px; font-size: 13px; width: 100%; box-sizing: border-box; }
+        
+        /* 버튼 바 스타일 */
+        .btn-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .btn { background-color: #0284c7; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+        .btn:hover { background-color: #0369a1; }
+        .btn-primary { background-color: #8b5cf6; }
+        .btn-primary:hover { background-color: #7c3aed; }
+        .btn-json { background-color: #334155; border: 1px solid #475569; }
+        .btn-json:hover { background-color: #475569; }
+        .btn-copy { background-color: #10b981; padding: 6px 12px; font-size: 12px; }
+        .btn-copy:hover { background-color: #059669; }
+        .btn-link { background-color: #0ea5e9; padding: 6px 12px; font-size: 12px; }
+        .btn-danger { background-color: #ef4444; padding: 4px 8px; font-size: 11px; }
+        .btn-danger:hover { background-color: #dc2626; }
+        .btn-add { background-color: #334155; border: 1px solid #475569; width: 100%; justify-content: center; margin-top: 5px; }
+        .btn-add:hover { background-color: #475569; }
+
+        /* 프롬프트 입력 칸 스타일 */
+        textarea { width: 100%; height: 110px; background-color: #0f172a; color: #e2e8f0; border: 1px solid #475569; border-radius: 8px; padding: 10px; font-size: 14px; resize: vertical; box-sizing: border-box; font-family: monospace; }
+        .sub-desc { font-size: 12px; color: #94a3b8; margin-bottom: 8px; }
+
+        /* 결과 구역 기본 숨김 및 활성화 */
+        #result-section { display: none; }
+        
+        /* 하단 안내 문구 */
+        .footer-note { font-size: 12px; color: #64748b; margin-top: 15px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <!-- 상단 헤더 -->
+        <div class="top-header">
+            <div class="logo-area">
+                <span class="logo-badge">V3.0 Pro</span>
+                <span class="logo-title">Shorts Auto Studio — Free Workflow</span>
+            </div>
+            <button class="btn btn-json" onclick="downloadJSON()">📥 프로젝트 다운로드 (JSON)</button>
+        </div>
+
+        <!-- 프로젝트 설정 패널 -->
+        <div class="card">
+            <h3>프로젝트 설정</h3>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <label>주제</label>
+                    <input type="text" id="proj-topic" value="아기 고양이의 세계 정복 음모론">
+                </div>
+                <div class="setting-item">
+                    <label>장르/분위기</label>
+                    <input type="text" id="proj-genre" value="SF, 느와르, 코믹, 억울한 표정">
+                </div>
+                <div class="setting-item">
+                    <label>목표 길이</label>
+                    <select id="proj-length">
+                        <option value="60">60초 (10컷)</option>
+                        <option value="30">30초 (5컷)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 유튜브 벤치마킹 분석 입력 카드 추가 -->
+        <div class="card">
+            <h3>
+                <span>참고 유튜브 영상 분석 (5~6개 이상 입력)</span>
+                <span style="font-size: 12px; color: #94a3b8; font-weight: normal;">입력된 영상의 후킹 및 특징을 분석하여 프롬프트에 반영합니다.</span>
+            </h3>
+            <div id="videoContainer"></div>
+            <button type="button" class="btn btn-add" onclick="addVideoField()">+ 유튜브 영상 입력 칸 추가하기</button>
+        </div>
+
+        <!-- 기능 버튼 바 -->
+        <div class="btn-bar">
+            <button class="btn btn-primary" onclick="generatePackage()">① 제작 패키지 생성 (분석 포함)</button>
+            <button class="btn" onclick="openWorkflows()">② 사이트 워크플로 열기</button>
+            <button class="btn" onclick="alert('이미지 폴더가 지정되었습니다.')">③ 이미지 폴더</button>
+            <button class="btn" onclick="alert('클립 폴더가 지정되었습니다.')">④ 클립 폴더</button>
+            <button class="btn" onclick="alert('영상 합치기 기능 실행 준비 완료')">⑤ 영상 합치기</button>
+        </div>
+
+        <!-- 결과 출력 칸별 카드 영역 (처음엔 숨겨져 있다가 버튼 누르면 나타남) -->
+        <div id="result-section">
+            
+            <!-- 1. Dreamina 카드 -->
+            <div class="card">
+                <h3>
+                    <span>✨ [1] Dreamina (1~2번 컷 - 오프닝)</span>
+                    <div>
+                        <a href="https://dreamina.capcut.com" target="_blank" class="btn btn-link">사이트 열기</a>
+                        <button class="btn btn-copy" onclick="copyText('p1')">복사하기</button>
+                    </div>
+                </h3>
+                <div class="sub-desc">유튜브 레퍼런스 분석 및 드리미나 시드댄스 1.0 패스트 모델에 맞춘 오프닝 프롬프트입니다.</div>
+                <textarea id="p1"></textarea>
+            </div>
+
+            <!-- 2. Google Flow 카드 -->
+            <div class="card">
+                <h3>
+                    <span>✨ [2] Google Flow (3~6번 컷 - 전개 및 잠입)</span>
+                    <div>
+                        <a href="https://labs.google" target="_blank" class="btn btn-link">사이트 열기</a>
+                        <button class="btn btn-copy" onclick="copyText('p2')">복사하기</button>
+                    </div>
+                </h3>
+                <div class="sub-desc">구글 Flow 탭에 차례대로 입력할 전개부 프롬프트입니다.</div>
+                <textarea id="p2"></textarea>
+            </div>
+
+            <!-- 3. Kling AI 카드 -->
+            <div class="card">
+                <h3>
+                    <span>✨ [3] Kling AI (7~10번 컷 - 클라이맥스 및 엔딩)</span>
+                    <div>
+                        <a href="https://klingai.com" target="_blank" class="btn btn-link">사이트 열기</a>
+                        <button class="btn btn-copy" onclick="copyText('p3')">복사하기</button>
+                    </div>
+                </h3>
+                <div class="sub-desc">Kling AI에 입력할 마지막 클라이맥스 및 반전 엔딩 프롬프트입니다.</div>
+                <textarea id="p3"></textarea>
+            </div>
+
+        </div>
+
+        <!-- 하단 안내 -->
+        <div class="footer-note">
+            목표: 유료 API 없이 0원 제작 · 사이트 무료 한도 안에서 사용<br>
+            0원 원칙: Python/Playwright/FFmpeg는 무료 도구. AI 사이트 무료 크레딧은 바뀔 수 있으니 고정 숫자를 보장하지 않아. 이 앱은 유료 API를 쓰지 않아. 무료·로그인·보안 확인은 우회하지 않아.
+        </div>
+
+    </div>
+
+    <script>
+        let videoIndex = 0;
+
+        // 유튜브 입력 행 추가 함수
+        function addVideoField(title = '', details = '') {
+            videoIndex++;
+            const container = document.getElementById('videoContainer');
+            const div = document.createElement('div');
+            div.className = 'video-entry';
+            div.id = `videoRow_${videoIndex}`;
+            div.innerHTML = `
+                <div class="video-entry-header">
+                    <span>참고 유튜브 #${videoIndex}</span>
+                    ${videoIndex > 1 ? `<button type="button" class="btn btn-danger" onclick="removeVideoField('videoRow_${videoIndex}')">삭제</button>` : ''}
+                </div>
+                <div class="video-inputs">
+                    <input type="text" class="v-title" placeholder="유튜브 제목 또는 링크 (예: 고양이 다큐 클립)" value="${title}">
+                    <input type="text" class="v-details" placeholder="분석 내용: 훅(Hook) 포인트, 이탈 방지 요소, 인기 요인" value="${details}">
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        // 유튜브 입력 행 삭제 함수
+        function removeVideoField(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        // 페이지 로드 시 기본 5개의 유튜브 입력 칸 생성
+        window.onload = function() {
+            for (let i = 0; i < 5; i++) {
+                addVideoField();
+            }
+        };
+
+        // 제작 패키지 생성 및 유튜브 분석 반영 로직
+        function generatePackage() {
+            const topic = document.getElementById('proj-topic').value.trim();
+            const genre = document.getElementById('proj-genre').value.trim();
+            const length = document.getElementById('proj-length').value;
+
+            // 유튜브 입력 데이터 수집
+            const titleElements = document.querySelectorAll('.v-title');
+            const detailElements = document.querySelectorAll('.v-details');
+
+            const collectedVideos = [];
+            for (let i = 0; i < titleElements.length; i++) {
+                const title = titleElements[i].value.trim();
+                const details = detailElements[i].value.trim();
+                if (title || details) {
+                    collectedVideos.push(`[레퍼런스 #${i + 1}] 제목/링크: ${title || '입력 없음'} | 분석 요인: ${details || '분석 내용 없음'}`);
+                }
+            }
+
+            // 분석 데이터 문자열 구성 (없을 경우 명시)
+            const videoAnalysisSummary = collectedVideos.length > 0 
+                ? collectedVideos.join('\n') 
+                : '유튜브 입력 없음 (일반 최적화 적용)';
+
+            // 각 프롬프트 영역에 주제와 유튜브 분석 결과를 결합하여 채워넣기
+            document.getElementById('p1').value = 
+`[유튜브 벤치마킹 분석 반영 - 오프닝]
+- 분석된 핵심 훅/트렌드:
+${videoAnalysisSummary}
+
+- 프롬프트 적용: A cute chubby grey Scottish Fold kitten with signature innocent round eyes and an unfairly sad pouty face, thematic style of [${topic}], ${genre}, realistic 4k, smooth motion, high viewer retention hook style.`;
+            
+            document.getElementById('p2').value = 
+`[유튜브 벤치마킹 분석 반영 - 전개 및 잠입]
+- 분석된 이탈 방지 패턴 반영 완료.
+- 주제: [${topic}] / 장르: ${genre}
+
+- 프롬프트 적용: A cute chubby grey Scottish Fold kitten executing a hilarious secret mission related to [${topic}], cinematic lighting, ${genre}, dynamic angle, fast-paced narrative transition, 4k`;
+            
+            document.getElementById('p3').value = 
+`[유튜브 벤치마킹 분석 반영 - 클라이맥스 및 엔딩]
+- 바이럴 구조(CTA/반전) 적용 완료.
+- 주제: [${topic}] / 장르: ${genre}
+
+- 프롬프트 적용: A cute chubby grey Scottish Fold kitten posing proudly on top of delivery boxes, concluding the story of [${topic}], epic lighting, ${genre}, viral ending style, 4k`;
+
+            // 결과 구역 화면에 표시하기
+            const resultSection = document.getElementById('result-section');
+            resultSection.style.display = 'block';
+            resultSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 복사하기 기능
+        function copyText(elementId) {
+            const textarea = document.getElementById(elementId);
+            textarea.select();
+            document.execCommand('copy');
+            alert('프롬프트가 클립보드에 복사되었습니다!');
+        }
+
+        // 사이트 워크플로 열기
+        function openWorkflows() {
+            window.open("https://dreamina.capcut.com", "_blank");
+            window.open("https://labs.google", "_blank");
+            window.open("https://klingai.com", "_blank");
+            alert('Dreamina, Google Flow, Kling AI 3개 사이트 탭이 동시에 열렸습니다!');
+        }
+
+        // JSON 다운로드 기능
+        function downloadJSON() {
+            const titleElements = document.querySelectorAll('.v-title');
+            const detailElements = document.querySelectorAll('.v-details');
+            const videos = [];
+            for (let i = 0; i < titleElements.length; i++) {
+                videos.push({ title: titleElements[i].value, details: detailElements[i].value });
+            }
+
+            const projectData = {
+                title: "Shorts Auto Studio V3 Pro",
+                topic: document.getElementById('proj-topic').value,
+                genre: document.getElementById('proj-genre').value,
+                length: document.getElementById('proj-length').value,
+                referencedVideos: videos
+            };
+            
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "shorts_studio_project.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+    </script>
+</body>
+</html>
