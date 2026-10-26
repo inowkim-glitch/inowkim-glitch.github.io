@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shorts Auto Studio V3.1 Pro Dark</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen py-8 px-4">
+    <div class="max-w-5xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+        
+        <!-- 헤더 -->
+        <div class="bg-gradient-to-r from-indigo-900 via-slate-900 to-slate-900 px-8 py-6 border-b border-slate-800 flex justify-between items-center">
+            <div>
+                <span class="bg-indigo-600 text-white text-xs px-2.5 py-1 rounded-md font-semibold">V3.1 Pro</span>
+                <h1 class="text-2xl font-bold mt-2 text-white">Shorts Auto Studio — Free Workflow</h1>
+                <p class="text-slate-400 text-sm mt-1">기준 이미지 캐릭터 고정 및 상세 씬별 연출 자동화 대시보드</p>
+            </div>
+        </div>
+
+        <!-- 본문 설정 영역 -->
+        <div class="p-8 space-y-6">
+            <!-- API 키 입력 -->
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-1">🔑 Gemini API 키</label>
+                <input type="password" id="apiKey" placeholder="AI Studio API 키를 입력하세요" 
+                    class="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+
+            <!-- 프로젝트 설정 카드 -->
+            <div class="bg-slate-950/50 p-5 rounded-xl border border-slate-800 space-y-4">
+                <h2 class="text-sm font-semibold text-indigo-400 uppercase tracking-wider">📌 프로젝트 설정</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">주제</label>
+                        <input type="text" id="topic" value="우주에서 라면 먹는 고양이" 
+                            class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">장르/분위기</label>
+                        <input type="text" id="genre" value="시네마틱, 유머러스, SF 코미디" 
+                            class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">목표 길이</label>
+                        <select id="shortsLength" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                            <option value="30초 (3컷 구성)">30초 (3컷 구성)</option>
+                            <option value="60초 (5컷 구성)" selected>60초 (5컷 구성)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 주인공 기준 이미지 업로드 (캐릭터 고정용) -->
+                <div class="pt-2">
+                    <label class="block text-xs font-medium text-indigo-300 mb-1">🖼️ 주인공 기준 이미지 업로드 (캐릭터 일관성 고정용)</label>
+                    <input type="file" id="imageInput" accept="image/*" 
+                        class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500">
+                    <div id="imagePreviewContainer" class="mt-3 hidden flex items-center space-x-3">
+                        <img id="imagePreview" class="w-16 h-16 object-cover rounded-lg border border-slate-700 shadow-sm">
+                        <span class="text-xs text-emerald-400 font-medium">✨ 기준 캐릭터 이미지가 등록되었습니다. 모든 씬에 이 외모가 고정 반영됩니다!</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 생성 버튼 -->
+            <button onclick="generatePrompts()" id="generateBtn" 
+                class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-indigo-600/20">
+                🚀 AI 맞춤 스토리보드 패키지 생성하기
+            </button>
+
+            <!-- 로딩 상태 -->
+            <div id="loading" class="hidden text-center py-10">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent"></div>
+                <p class="text-sm text-slate-400 mt-3">AI가 캐릭터 특징을 분석하고 상세 연출 씬을 구성하고 있습니다... ⏳</p>
+            </div>
+
+            <!-- 에러 메시지 -->
+            <div id="errorContainer" class="hidden bg-red-950/50 border border-red-800 text-red-200 px-4 py-3 rounded-xl text-sm">
+                <p id="errorMessage" class="font-medium"></p>
+            </div>
+
+            <!-- 결과 출력 영역 -->
+            <div id="resultContainer" class="hidden space-y-6 pt-4 border-t border-slate-800">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-white">🎬 씬별 상세 연출 패키지</h2>
+                    <button onclick="downloadTxt()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 py-2 rounded-lg font-medium transition">
+                        📥 전체 패키지 텍스트 다운로드
+                    </button>
+                </div>
+                <!-- 결과가 동적으로 들어갈 컨테이너 -->
+                <div id="resultOutputList" class="space-y-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 자바스크립트 로직 -->
+    <script>
+        let base64Image = null;
+        let mimeType = null;
+
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                mimeType = file.type;
+                const reader = new FileReader();
+                reader.onload = function(uploadEvent) {
+                    base64Image = uploadEvent.target.result.split(',')[1];
+                    const preview = document.getElementById('imagePreview');
+                    preview.src = uploadEvent.target.result;
+                    document.getElementById('imagePreviewContainer').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        async function generatePrompts() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const topic = document.getElementById('topic').value.trim();
+            const genre = document.getElementById('genre').value.trim();
+            const shortsLength = document.getElementById('shortsLength').value;
+
+            document.getElementById('errorContainer').classList.add('hidden');
+            document.getElementById('resultContainer').classList.add('hidden');
+
+            if (!apiKey) {
+                showError('⚠️ Gemini API 키를 먼저 입력해 주세요!');
+                return;
+            }
+
+            const cutCount = shortsLength.includes('30초') ? 3 : 5;
+
+            const promptText = `너는 전문 쇼츠 영상 총괄 디렉터야. 다음 조건에 맞춰 유튜브 쇼츠용 ${cutCount}개의 씬 스토리보드를 작성해줘.
+
+[조건]
+- 주제: ${topic}
+- 장르/분위기: ${genre}
+- 중요 규칙 (캐릭터 일관성 고정): 업로드된 기준 이미지(또는 기본 설정 캐릭터)의 외모, 의상, 색상, 특징을 모든 씬의 '장면 묘사' 맨 처음에 정확히 동일하게 반복 고정하여 캐릭터가 바뀌지 않도록 해줘.
+
+[출력 형식]
+반드시 각 씬마다 아래 구조를 지켜서 JSON 형식이나 명확한 텍스트 블록 형태로 작성해줘. 파싱하기 쉽도록 각 씬은 번호로 구분해줘.
+각 씬별 포함 항목:
+1. 씬 번호 및 시간 (예: 씬 1 (00초 ~ 12초))
+2. 씬 제목 / 발단 내용 요약
+3. 장면 묘사 (Flow 프롬프트)
+4. 카메라 연출 (모션 명령)
+5. 효과음 (SFX)
+6. 대사
+7. 화면 자막`;
+
+            const parts = [{ text: promptText }];
+            if (base64Image) {
+                parts.push({
+                    inline_data: {
+                        mime_type: mimeType,
+                        data: base64Image
+                    }
+                });
+            }
+
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('generateBtn').disabled = true;
+
+            try {
+                const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                const proxyUrl = `https://api.allorigins.win/raw?url=` + encodeURIComponent(targetUrl);
+
+                const response = await fetch(proxyUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: parts }] })
+                });
+
+                if (!response.ok) throw new Error(`서버 응답 오류 (상태 코드: ${response.status})`);
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+
+                const outputText = data.candidates[0].content.parts[0].text;
+                
+                // 화면에 예쁘게 렌더링
+                renderResult(outputText);
+            } catch (error) {
+                showError('❌ 오류 발생: ' + error.message);
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('generateBtn').disabled = false;
+            }
+        }
+
+        function renderResult(text) {
+            const container = document.getElementById('resultOutputList');
+            container.innerHTML = `<div class="bg-slate-950 p-6 rounded-xl border border-slate-800 font-mono text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">${escapeHtml(text)}</div>`;
+            document.getElementById('resultContainer').classList.remove('hidden');
+        }
+
+        function escapeHtml(string) {
+            return string.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function showError(msg) {
+            document.getElementById('errorMessage').textContent = msg;
+            document.getElementById('errorContainer').classList.remove('hidden');
+        }
+
+        function downloadTxt() {
+            const text = document.getElementById('resultOutputList').innerText;
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'shorts_storyboard_package.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
