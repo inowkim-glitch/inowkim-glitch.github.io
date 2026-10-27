@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shorts Auto Studio V5.0 Pro Dark — Final</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen py-8 px-4">
+    <div class="max-w-5xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+        
+        <!-- 상단 헤더 (첫 번째 사진 디자인 유지) -->
+        <div class="bg-slate-900 px-8 py-5 border-b border-slate-800 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="bg-indigo-600 text-white text-xs px-2.5 py-1 rounded-md font-semibold">V5.0 Pro</span>
+                <h1 class="text-xl font-bold text-white">Shorts Auto Studio — Free Workflow</h1>
+            </div>
+            <button onclick="downloadProjectJson()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3.5 py-2 rounded-lg border border-slate-700 font-medium transition">
+                📁 프로젝트 다운로드 (JSON)
+            </button>
+        </div>
+
+        <!-- 본문 설정 영역 -->
+        <div class="p-8 space-y-6">
+            <!-- API 키 입력 및 모델 자동 확인 (자동 저장 기능 포함) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-slate-300 mb-1">
+                        🔑 Gemini API 키 <span id="keySaveStatus" class="text-xs text-emerald-400 font-normal">(자동 저장됨)</span>
+                    </label>
+                    <div class="flex space-x-2">
+                        <input type="password" id="apiKey" placeholder="AI Studio API 키를 입력하세요 (자동 저장됩니다)" oninput="saveApiKey()"
+                            class="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <button onclick="toggleKeyVisibility()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 rounded-lg border border-slate-700 whitespace-nowrap">
+                            👁️ 보기
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">🤖 사용할 AI 모델 (고정)</label>
+                    <div class="flex space-x-2">
+                        <select id="modelSelect" onchange="saveModelPref()" class="w-full px-3 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="gemini-3.8-flash" selected>gemini-3.8-flash (기본)</option>
+                        </select>
+                        <button onclick="detectAvailableModels(true)" class="bg-indigo-950 hover:bg-indigo-900 text-indigo-300 text-xs px-3 rounded-lg border border-indigo-700 whitespace-nowrap" title="내 API 키에서 작동하는 모델을 자동으로 찾아옵니다">
+                            🔍 자동검색
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 프로젝트 설정 카드 -->
+            <div class="bg-slate-950/60 p-5 rounded-xl border border-slate-800 space-y-4">
+                <h2 class="text-sm font-semibold text-indigo-400 uppercase tracking-wider">📌 프로젝트 설정 (0원 루틴 · 3개 AI 툴 10컷 자동 배분)</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">주제</label>
+                        <input type="text" id="topic" value="우주에서 라면 먹는 고양이" 
+                            class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">장르/분위기</label>
+                        <input type="text" id="genre" value="시네마틱, 유머러스, SF 코미디" 
+                            class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">목표 길이 (10컷 시나리오)</label>
+                        <select id="shortsLength" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                            <option value="30">30초 (10컷 · 컷당 3초 빠른 호흡)</option>
+                            <option value="60" selected>60초 (10컷 · 컷당 6초 표준 호흡)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 주인공 기준 이미지 업로드 (초고속 자동 압축) -->
+                <div class="pt-2">
+                    <label class="block text-xs font-medium text-indigo-300 mb-1">🖼️ 주인공 기준 이미지 업로드 (캐릭터 일관성 고정용 · 초고속 자동 압축)</label>
+                    <input type="file" id="imageInput" accept="image/*" 
+                        class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500">
+                    <div id="imagePreviewContainer" class="mt-3 hidden flex items-center justify-between bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+                        <div class="flex items-center space-x-3">
+                            <img id="imagePreview" class="w-14 h-14 object-cover rounded-lg border border-slate-700 shadow-sm">
+                            <div>
+                                <span class="text-xs text-emerald-400 font-medium block">✨ 기준 캐릭터 이미지가 최적화되어 등록되었습니다!</span>
+                                <span class="text-[11px] text-slate-400">1~10번 모든 컷 프롬프트 맨 앞에 동일한 외모 묘사가 고정 반영됩니다.</span>
+                            </div>
+                        </div>
+                        <button onclick="clearImage()" class="text-xs text-slate-400 hover:text-red-400 px-2 py-1">삭제 ✕</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 상단 액션 버튼 모음 (첫 번째 사진 디자인 그대로 유지) -->
+            <div class="flex flex-wrap gap-2 pt-2">
+                <button onclick="handleGenerate()" id="generateBtn" 
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition shadow-md">
+                    ① 제작 패키지 생성
+                </button>
+                <button onclick="openAllSites()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-4 py-2.5 rounded-lg border border-slate-700 transition">
+                    ② 사이트 워크플로 열기 (3곳)
+                </button>
+                <button onclick="alert('내 PC의 C:\\Shorts_Auto\\Images 폴더에 생성된 이미지를 저장하세요.')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-4 py-2.5 rounded-lg border border-slate-700 transition">
+                    ③ 이미지 폴더
+                </button>
+                <button onclick="alert('내 PC의 C:\\Shorts_Auto\\Clips 폴더에 다운로드한 영상을 모으세요.')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-4 py-2.5 rounded-lg border border-slate-700 transition">
+                    ④ 클립 폴더
+                </button>
+                <button onclick="alert('모인 10개의 영상을 캡컷(CapCut) 타임라인에 올려 합쳐주세요!')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-4 py-2.5 rounded-lg border border-slate-700 transition">
+                    ⑤ 영상 합치기
+                </button>
+            </div>
+
+            <!-- 로딩 상태 및 재시도 카운터 -->
+            <div id="loading" class="hidden text-center py-8 bg-slate-950/60 rounded-xl border border-slate-800 space-y-3">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent"></div>
+                <p id="loadingStatusText" class="text-sm text-indigo-300 font-semibold">AI가 10컷 스토리보드를 생성하고 있습니다... ⏳</p>
+                <p class="text-xs text-slate-500">서버가 혼잡할 경우 구형 모델로 바뀌지 않고, 5초 대기 후 동일 모델로 최대 3회 자동 재시도합니다.</p>
+            </div>
+
+            <!-- 에러 메시지 -->
+            <div id="errorContainer" class="hidden bg-red-950/50 border border-red-800 text-red-200 px-4 py-3 rounded-xl text-sm">
+                <p id="errorMessage" class="font-medium"></p>
+            </div>
+
+            <!-- 결과 출력 영역 -->
+            <div id="resultContainer" class="hidden space-y-6 pt-4 border-t border-slate-800">
+                
+                <!-- 상단 마스터 컨트롤 바 (두 번째 사진 상단 바 완벽 구현) -->
+                <div class="flex flex-wrap justify-between items-center bg-slate-950 p-4 rounded-xl border border-slate-800 gap-3">
+                    <div>
+                        <h2 class="text-sm font-bold text-teal-400">🎬 항목별 개별 복사 & 전체 복사 (10컷 마스터 테이블)</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">각 항목 우측의 [복사] 버튼을 누르면 해당 항목(장면 묘사, 카메라 연출, 대사, 효과음, 화면 자막)만 클립보드에 즉시 복사됩니다.</p>
+                    </div>
+                    <button onclick="copyAllMaster()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 py-2.5 rounded-lg font-bold transition shadow-md whitespace-nowrap">
+                        전체 마스터 복사
+                    </button>
+                </div>
+
+                <!-- 한눈에 보는 10컷 요약 표 -->
+                <details class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden">
+                    <summary class="px-5 py-3 text-xs font-bold text-indigo-300 cursor-pointer hover:bg-slate-900 flex justify-between items-center">
+                        <span>📊 한눈에 보는 10컷 요약 표 (클릭하여 펼치기/접기)</span>
+                        <span class="text-[11px] text-slate-400">컷 번호 | 담당 AI 툴 | 상황 설명 | 이미지 프롬프트 | 모션 명령</span>
+                    </summary>
+                    <div class="p-4 overflow-x-auto border-t border-slate-800">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b border-slate-800 text-slate-400 bg-slate-900/50">
+                                    <th class="p-2 whitespace-nowrap">컷 번호</th>
+                                    <th class="p-2 whitespace-nowrap">담당 툴</th>
+                                    <th class="p-2">상황 설명</th>
+                                    <th class="p-2">이미지 생성 프롬프트</th>
+                                    <th class="p-2">모션 명령 프롬프트</th>
+                                </tr>
+                            </thead>
+                            <tbody id="summaryTableBody" class="divide-y divide-slate-800/60 text-slate-300"></tbody>
+                        </table>
+                    </div>
+                </details>
+
+                <!-- ✨ [1] Dreamina 섹션 (1~2번 컷) -->
+                <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-5 space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <div>
+                            <h3 class="text-sm font-bold text-sky-400">✨ [1] Dreamina (1~2번 컷 - 오프닝 / 인물·표정·의상 디테일 중심)</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">드리미나 모델에 넣을 도입부 주인공 중심 프롬프트입니다.</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <a href="https://dreamina.capcut.com/" target="_blank" class="bg-sky-600 hover:bg-sky-500 text-white text-xs px-3 py-1.5 rounded-md font-semibold transition">사이트 열기</a>
+                            <button onclick="copyToolSection('Dreamina')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-md font-semibold transition">1~2컷 전체 복사</button>
+                        </div>
+                    </div>
+                    <div id="dreaminaList" class="space-y-4"></div>
+                </div>
+
+                <!-- ✨ [2] Google Flow 섹션 (3~6번 컷) -->
+                <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-5 space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <div>
+                            <h3 class="text-sm font-bold text-sky-400">✨ [2] Google Flow (3~6번 컷 - 전개 및 사건 / 역동적 액션·상황·사운드 중심)</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">구글 Flow 탭에 차례대로 입력할 전개 프롬프트입니다.</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <a href="https://labs.google/fx/ko" target="_blank" class="bg-sky-600 hover:bg-sky-500 text-white text-xs px-3 py-1.5 rounded-md font-semibold transition">사이트 열기</a>
+                            <button onclick="copyToolSection('Google Flow')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-md font-semibold transition">3~6컷 전체 복사</button>
+                        </div>
+                    </div>
+                    <div id="flowList" class="space-y-4"></div>
+                </div>
+
+                <!-- ✨ [3] Kling AI 섹션 (7~10번 컷) -->
+                <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-5 space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <div>
+                            <h3 class="text-sm font-bold text-sky-400">✨ [3] Kling AI (7~10번 컷 - 클라이맥스 및 엔딩 / 광활한 배경·카메라 무빙 중심)</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Kling AI에 입력할 마지막 결말/반전 및 배경 중심 프롬프트입니다.</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <a href="https://klingai.com/" target="_blank" class="bg-sky-600 hover:bg-sky-500 text-white text-xs px-3 py-1.5 rounded-md font-semibold transition">사이트 열기</a>
+                            <button onclick="copyToolSection('Kling AI')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-md font-semibold transition">7~10컷 전체 복사</button>
+                        </div>
+                    </div>
+                    <div id="klingList" class="space-y-4"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let compressedBase64Image = null;
+        let currentSceneData = [];
+
+        // 1. 시작 시 저장된 API 키 불러오기 및 사용 가능 모델 자동 스캔
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedApiKey = localStorage.getItem('gemini_api_key');
+            if (savedApiKey) {
+                document.getElementById('apiKey').value = savedApiKey;
+                detectAvailableModels(false);
+            }
+        });
+
+        function saveApiKey() {
+            const key = document.getElementById('apiKey').value.trim();
+            localStorage.setItem('gemini_api_key', key);
+            const status = document.getElementById('keySaveStatus');
+            status.textContent = "(방금 저장됨 ✓)";
+            setTimeout(() => { status.textContent = "(자동 저장됨)"; }, 1500);
+        }
+
+        function saveModelPref() {
+            const model = document.getElementById('modelSelect').value;
+            localStorage.setItem('gemini_model_pref', model);
+        }
+
+        function toggleKeyVisibility() {
+            const input = document.getElementById('apiKey');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        // 핵심 기능: 내 API 키가 지원하는 모델 목록을 구글 서버에서 직접 받아와서 세팅 (404 에러 원천 차단)
+        async function detectAvailableModels(showAlert = false) {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                if (showAlert) alert("먼저 API 키를 입력해 주세요!");
+                return;
+            }
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data.models) return;
+
+                // generateContent를 지원하는 flash/pro 계열 모델만 필터링
+                const validModels = data.models
+                    .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+                    .map(m => m.name.replace('models/', ''))
+                    .filter(name => name.includes('gemini'));
+
+                if (validModels.length > 0) {
+                    const select = document.getElementById('modelSelect');
+                    select.innerHTML = '';
+                    
+                    // gemini-3.8-flash가 있으면 최우선 선택
+                    let preferred = localStorage.getItem('gemini_model_pref') || 'gemini-3.8-flash';
+                    if (!validModels.includes(preferred)) {
+                        preferred = validModels.find(m => m.includes('3.8') || m.includes('flash')) || validModels[0];
+                    }
+
+                    validModels.forEach(mName => {
+                        const opt = document.createElement('option');
+                        opt.value = mName;
+                        opt.textContent = mName;
+                        if (mName === preferred) opt.selected = true;
+                        select.appendChild(opt);
+                    });
+
+                    if (showAlert) {
+                        alert(`✅ 내 API 키에서 사용 가능한 모델 ${validModels.length}개를 찾아 세팅했습니다!\n현재 선택된 모델: ${select.value}`);
+                    }
+                }
+            } catch (e) {
+                console.warn("모델 목록 조회 실패:", e);
+            }
+        }
+
+        // 2. 이미지 업로드 시 512px 초고속 압축
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const maxSize = 512;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height && width > maxSize) {
+                        height *= maxSize / width;
+                        width = maxSize;
+                    } else if (height > maxSize) {
+                        width *= maxSize / height;
+                        height = maxSize;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                    compressedBase64Image = dataUrl.split(',')[1];
+
+                    document.getElementById('imagePreview').src = dataUrl;
+                    document.getElementById('imagePreviewContainer').classList.remove('hidden');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function clearImage() {
+            compressedBase64Image = null;
+            document.getElementById('imageInput').value = '';
+            document.getElementById('imagePreviewContainer').classList.add('hidden');
+        }
+
+        // 3. 메인 생성 함수 (지원 종료된 구형 모델로 바뀌지 않고, 선택된 최신 모델로만 3회 끈질기게 재시도)
+        async function handleGenerate() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const topic = document.getElementById('topic').value.trim();
+            const genre = document.getElementById('genre').value.trim();
+            const totalSeconds = parseInt(document.getElementById('shortsLength').value, 10);
+            let targetModel = document.getElementById('modelSelect').value || 'gemini-3.8-flash';
+
+            document.getElementById('errorContainer').classList.add('hidden');
+            document.getElementById('resultContainer').classList.add('hidden');
+
+            if (!apiKey) {
+                showError('⚠️ 상단에 Gemini API 키를 먼저 입력해 주세요!');
+                return;
+            }
+            if (!topic) {
+                showError('⚠️ 쇼츠 주제를 입력해 주세요!');
+                return;
+            }
+
+            const secPerCut = totalSeconds === 30 ? 3 : 6;
+
+            const promptText = `너는 '0원 쇼츠 제작 하루 루틴' 전문 디렉터야. 사용자의 주제를 바탕으로 정확히 10개의 컷으로 구성된 스토리보드 JSON 데이터를 작성해줘.
+
+[입력 정보]
+- 주제: ${topic}
+- 장르/분위기: ${genre}
+- 전체 길이: ${totalSeconds}초 (총 10컷, 한 컷당 ${secPerCut}초씩 배분)
+
+[핵심 규칙]
+1. 주인공 일관성 고정: 첨부된 이미지가 있다면 그 캐릭터의 외모/색상/특징을 분석하고, 이미지가 없다면 주제에 맞는 주인공 외모를 영어로 구체적으로 설정해. 그리고 1번부터 10번까지 모든 컷의 'prompt' 맨 앞부분에 그 영문 외모 묘사(Fixed Character Seed)를 토씨 하나 틀리지 않고 똑같이 반복해서 넣어줘.
+2. 컷별 역할 및 AI 툴 배분 (총 10개 컷 필수):
+   - 1~2번 컷 (tool: "Dreamina"): 도입(인물 소개/시선 끌기). 인물의 외모, 표정, 의상 디테일 위주로 영문 이미지 프롬프트 작성.
+   - 3~6번 컷 (tool: "Google Flow"): 전개(사건 발생/액션). 역동적인 상황, 무중력/액션, 구도 묘사 위주로 영문 이미지 프롬프트 작성.
+   - 7~10번 컷 (tool: "Kling AI"): 결말(클라이맥스/유머/반전). 광활한 배경, 풍경, 카메라 움직임이 돋보이는 영문 이미지 프롬프트 작성.
+3. 출력 언어:
+   - prompt (장면 묘사 프롬프트): 해외 AI 툴 입력을 위해 반드시 '영어(English)'로 작성하고 끝에 ', cinematic lighting, 8k'를 붙일 것.
+   - camera (카메라 연출/모션 명령): 한국어 설명과 영어 명령어를 함께 표기 (예: 천천히 줌인 (Gentle zoom-in on the face)).
+   - title (상황 설명), sfx (효과음), dialogue (대사), subtitle (화면 자막): 자연스럽고 재미있는 '한국어'로 작성.
+
+반드시 아래 JSON 배열 구조로만 응답해 (총 10개 객체):
+[
+  {
+    "cutNum": 1,
+    "tool": "Dreamina",
+    "time": "00초 ~ 0${secPerCut}초",
+    "title": "도입: 상황 설명 한 줄 요약",
+    "prompt": "Fixed character description..., scene details...",
+    "camera": "카메라 모션 명령...",
+    "sfx": "효과음 설명...",
+    "dialogue": "캐릭터 대사 또는 내레이션...",
+    "subtitle": "화면에 들어갈 자막..."
+  }
+]`;
+
+            const parts = [{ text: promptText }];
+            if (compressedBase64Image) {
+                parts.push({
+                    inline_data: {
+                        mime_type: "image/jpeg",
+                        data: compressedBase64Image
+                    }
+                });
+            }
+
+            const requestBody = {
+                contents: [{ parts: parts }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    temperature: 0.7
+                }
+            };
+
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('generateBtn').disabled = true;
+
+            const maxRetries = 3;
+            let attempt = 0;
+            let success = false;
+            let lastErrorMsg = "";
+
+            while (attempt < maxRetries && !success) {
+                attempt++;
+                try {
+                    document.getElementById('loadingStatusText').innerHTML = 
+                        `🔄 AI 스토리보드 생성 요청 중... (시도 <b>${attempt}</b> / ${maxRetries}회 · 고정 모델: <b>${targetModel}</b>)`;
+
+                    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`;
+
+                    // 35초 타임아웃 (넉넉하게 대기)
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 35000);
+
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestBody),
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeoutId);
+
+                    if (!response.ok) {
+                        const errData = await response.json().catch(() => ({}));
+                        const errMsg = errData.error?.message || `서버 응답 코드 ${response.status}`;
+                        
+                        // 만약 모델 이름 자체가 404 에러라면 즉시 서버에서 사용 가능한 모델 목록을 조회해 교체
+                        if (response.status === 404) {
+                            await detectAvailableModels(false);
+                            targetModel = document.getElementById('modelSelect').value;
+                        }
+                        throw new Error(errMsg);
+                    }
+
+                    const data = await response.json();
+                    if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
+                        throw new Error('AI 응답 데이터가 비어 있습니다.');
+                    }
+
+                    let rawText = data.candidates[0].content.parts[0].text;
+                    rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+
+                    const startIdx = rawText.indexOf('[');
+                    const endIdx = rawText.lastIndexOf(']');
+                    if (startIdx !== -1 && endIdx !== -1) {
+                        rawText = rawText.substring(startIdx, endIdx + 1);
+                    }
+
+                    const parsedData = JSON.parse(rawText);
+                    if (!Array.isArray(parsedData) || parsedData.length === 0) {
+                        throw new Error('올바른 10컷 형식의 데이터가 아닙니다.');
+                    }
+
+                    currentSceneData = parsedData;
+                    renderAllSections(parsedData);
+                    success = true;
+
+                } catch (error) {
+                    lastErrorMsg = error.name === 'AbortError' ? '응답 시간 초과 (35초 경과)' : error.message;
+                    console.warn(`[시도 ${attempt}/${maxRetries} 실패]`, lastErrorMsg);
+
+                    if (attempt < maxRetries) {
+                        // 서버 혼잡(503) 또는 분당 제한(429) 해제를 위해 5초 카운트다운 대기 후 동일 모델로 재시도
+                        for (let sec = 5; sec > 0; sec--) {
+                            document.getElementById('loadingStatusText').innerHTML = 
+                                `⚠️ 일시적 서버 지연 감지 (${lastErrorMsg})<br><span class="text-amber-400 font-bold">${sec}초</span> 후 <b>${targetModel}</b> 모델로 다시 시도합니다... (재시도 ${attempt} / ${maxRetries})`;
+                            await new Promise(r => setTimeout(r, 1000));
+                        }
+                    }
+                }
+            }
+
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('generateBtn').disabled = false;
+
+            if (!success) {
+                showError(`❌ 3회 자동 시도 모두 실패했습니다.<br>원인: ${lastErrorMsg}<br>💡 팁: 구글 서버 트래픽이 몰렸거나 연속 클릭으로 인한 1분 쿨타임일 수 있습니다. <b>약 10~20초만 기다렸다가 다시 눌러보세요!</b>`);
+            }
+        }
+
+        // 4. 결과 렌더링 (요약 표 + 3개 툴 섹션별 2번 사진 스타일 박스 생성)
+        function renderAllSections(data) {
+            const dreaminaContainer = document.getElementById('dreaminaList');
+            const flowContainer = document.getElementById('flowList');
+            const klingContainer = document.getElementById('klingList');
+            const tableBody = document.getElementById('summaryTableBody');
+
+            dreaminaContainer.innerHTML = '';
+            flowContainer.innerHTML = '';
+            klingContainer.innerHTML = '';
+            tableBody.innerHTML = '';
+
+            data.forEach((item, idx) => {
+                const cutNum = item.cutNum || (idx + 1);
+                let tool = item.tool || (cutNum <= 2 ? 'Dreamina' : cutNum <= 6 ? 'Google Flow' : 'Kling AI');
+
+                // 1) 요약 표 행 추가
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-900/40";
+                tr.innerHTML = `
+                    <td class="p-2 font-bold text-indigo-400">컷 ${cutNum} (${item.time || ''})</td>
+                    <td class="p-2 font-semibold text-emerald-400">${escapeHtml(tool)}</td>
+                    <td class="p-2">${escapeHtml(item.title || '')}</td>
+                    <td class="p-2 font-mono text-[11px] text-slate-400">${escapeHtml(item.prompt || '')}</td>
+                    <td class="p-2 text-slate-300">${escapeHtml(item.camera || '')}</td>
+                `;
+                tableBody.appendChild(tr);
+
+                // 2) 두 번째 사진 스타일 개별 복사 카드 생성
+                const card = document.createElement('div');
+                card.className = "bg-slate-900/90 border border-slate-800 rounded-xl p-5 space-y-4 shadow-lg";
+                card.innerHTML = `
+                    <div class="space-y-2.5 border-b border-slate-800 pb-3">
+                        <div class="flex flex-wrap items-center gap-2.5">
+                            <span class="border border-sky-500/60 bg-sky-950/60 text-sky-300 text-xs px-3 py-1 rounded-md font-bold">
+                                [씬 ${cutNum}] ${escapeHtml(item.time || '')}
+                            </span>
+                            <span class="text-xs px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800 font-semibold">
+                                담당: ${escapeHtml(tool)}
+                            </span>
+                            <span class="text-sm font-bold text-fuchsia-400">${escapeHtml(item.title || '')}</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="copyField(this, 'prompt-${cutNum}')" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs px-3.5 py-1.5 rounded-md font-bold transition">
+                                ${escapeHtml(tool)} 장면 묘사 복사
+                            </button>
+                            <button onclick="copyCutAll(${cutNum})" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3.5 py-1.5 rounded-md font-semibold border border-slate-700 transition">
+                                씬 ${cutNum} 전체 항목 복사
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-bold text-sky-400">- 장면 묘사 (${escapeHtml(tool)} 이미지 생성 프롬프트)</label>
+                            <button onclick="copyField(this, 'prompt-${cutNum}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] px-2.5 py-1 rounded font-semibold transition">
+                                장면 묘사 복사
+                            </button>
+                        </div>
+                        <textarea id="prompt-${cutNum}" class="w-full bg-slate-950 text-slate-200 text-xs p-3 rounded-lg border border-slate-800 focus:outline-none focus:border-sky-500 h-20 resize-y font-mono">${escapeHtml(item.prompt || '')}</textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between items-center">
+                                <label class="text-xs font-bold text-sky-400">- 카메라 연출 (모션 명령)</label>
+                                <button onclick="copyField(this, 'camera-${cutNum}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] px-2.5 py-1 rounded font-semibold transition">
+                                    카메라 연출 복사
+                                </button>
+                            </div>
+                            <textarea id="camera-${cutNum}" class="w-full bg-slate-950 text-slate-200 text-xs p-3 rounded-lg border border-slate-800 focus:outline-none focus:border-sky-500 h-16 resize-y">${escapeHtml(item.camera || '')}</textarea>
+                        </div>
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between items-center">
+                                <label class="text-xs font-bold text-sky-400">- 효과음 (SFX)</label>
+                                <button onclick="copyField(this, 'sfx-${cutNum}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] px-2.5 py-1 rounded font-semibold transition">
+                                    효과음 복사
+                                </button>
+                            </div>
+                            <textarea id="sfx-${cutNum}" class="w-full bg-slate-950 text-slate-200 text-xs p-3 rounded-lg border border-slate-800 focus:outline-none focus:border-sky-500 h-16 resize-y">${escapeHtml(item.sfx || '')}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between items-center">
+                                <label class="text-xs font-bold text-sky-400">- 대사</label>
+                                <button onclick="copyField(this, 'dialogue-${cutNum}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] px-2.5 py-1 rounded font-semibold transition">
+                                    대사 복사
+                                </button>
+                            </div>
+                            <textarea id="dialogue-${cutNum}" class="w-full bg-slate-950 text-slate-200 text-xs p-3 rounded-lg border border-slate-800 focus:outline-none focus:border-sky-500 h-16 resize-y">${escapeHtml(item.dialogue || '')}</textarea>
+                        </div>
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between items-center">
+                                <label class="text-xs font-bold text-sky-400">- 화면 자막</label>
+                                <button onclick="copyField(this, 'subtitle-${cutNum}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] px-2.5 py-1 rounded font-semibold transition">
+                                    화면 자막 복사
+                                </button>
+                            </div>
+                            <textarea id="subtitle-${cutNum}" class="w-full bg-slate-950 text-slate-200 text-xs p-3 rounded-lg border border-slate-800 focus:outline-none focus:border-sky-500 h-16 resize-y">${escapeHtml(item.subtitle || '')}</textarea>
+                        </div>
+                    </div>
+                `;
+
+                if (cutNum <= 2) {
+                    dreaminaContainer.appendChild(card);
+                } else if (cutNum <= 6) {
+                    flowContainer.appendChild(card);
+                } else {
+                    klingContainer.appendChild(card);
+                }
+            });
+
+            document.getElementById('resultContainer').classList.remove('hidden');
+        }
+
+        function copyField(btn, elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            navigator.clipboard.writeText(el.value);
+
+            const originalText = btn.textContent;
+            btn.textContent = "복사됨 ✓";
+            setTimeout(() => { btn.textContent = originalText; }, 1200);
+        }
+
+        function copyCutAll(cutNum) {
+            const prompt = document.getElementById(`prompt-${cutNum}`).value;
+            const camera = document.getElementById(`camera-${cutNum}`).value;
+            const sfx = document.getElementById(`sfx-${cutNum}`).value;
+            const dialogue = document.getElementById(`dialogue-${cutNum}`).value;
+            const subtitle = document.getElementById(`subtitle-${cutNum}`).value;
+
+            const text = `[씬 ${cutNum}]\n- 장면 묘사: ${prompt}\n- 카메라 연출: ${camera}\n- 효과음: ${sfx}\n- 대사: ${dialogue}\n- 화면 자막: ${subtitle}`;
+            navigator.clipboard.writeText(text).then(() => {
+                alert(`씬 ${cutNum}의 전체 항목이 복사되었습니다!`);
+            });
+        }
+
+        function copyToolSection(toolName) {
+            let start = 1, end = 2;
+            if (toolName === 'Google Flow') { start = 3; end = 6; }
+            if (toolName === 'Kling AI') { start = 7; end = 10; }
+
+            let result = `=== [${toolName} 전용 프롬프트 (${start}~${end}번 컷)] ===\n\n`;
+            for (let i = start; i <= end; i++) {
+                const p = document.getElementById(`prompt-${i}`);
+                const c = document.getElementById(`camera-${i}`);
+                if (p && c) {
+                    result += `[컷 ${i}]\n- 이미지 프롬프트: ${p.value}\n- 모션 명령: ${c.value}\n\n`;
+                }
+            }
+            navigator.clipboard.writeText(result).then(() => {
+                alert(`${toolName} (${start}~${end}번 컷) 프롬프트 세트가 복사되었습니다!`);
+            });
+        }
+
+        function copyAllMaster() {
+            let result = "";
+            for (let i = 1; i <= 10; i++) {
+                const p = document.getElementById(`prompt-${i}`);
+                if (!p) continue;
+                const c = document.getElementById(`camera-${i}`).value;
+                const s = document.getElementById(`sfx-${i}`).value;
+                const d = document.getElementById(`dialogue-${i}`).value;
+                const sub = document.getElementById(`subtitle-${i}`).value;
+                result += `[씬 ${i}]\n- 장면 묘사: ${p.value}\n- 카메라 연출: ${c}\n- 효과음: ${s}\n- 대사: ${d}\n- 화면 자막: ${sub}\n\n`;
+            }
+            navigator.clipboard.writeText(result).then(() => {
+                alert("1~10번 컷 전체 마스터 내용이 클립보드에 복사되었습니다!");
+            });
+        }
+
+        function downloadProjectJson() {
+            if (!currentSceneData || currentSceneData.length === 0) {
+                alert("먼저 [① 제작 패키지 생성] 버튼을 눌러 스토리보드를 생성해 주세요!");
+                return;
+            }
+            const blob = new Blob([JSON.stringify(currentSceneData, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "shorts_10cuts_project.json";
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function openAllSites() {
+            window.open("https://dreamina.capcut.com/", "_blank");
+            window.open("https://labs.google/fx/ko", "_blank");
+            window.open("https://klingai.com/", "_blank");
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        function showError(msg) {
+            document.getElementById('errorMessage').innerHTML = msg;
+            document.getElementById('errorContainer').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
