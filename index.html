@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>진일 통합관리 기술 테스트</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#214b5b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="진일 통합관리">
+<style>
+body{font-family:system-ui,sans-serif;background:#f4f6f8;color:#182b39;margin:0;padding:24px}
+main{max-width:650px;margin:auto;background:white;padding:28px;border-radius:18px;box-shadow:0 8px 30px #1223}
+h1{font-size:23px}label{display:block;margin:18px 0 7px;font-weight:700}
+input,select,textarea,button{box-sizing:border-box;width:100%;padding:12px;border:1px solid #bbc6cf;border-radius:9px;font-size:16px}
+button{background:#214b5b;color:white;border:0;margin-top:12px;cursor:pointer}
+button:disabled{opacity:.5}small{color:#576875}#status{white-space:pre-wrap;padding:12px;background:#eef3f5;border-radius:9px}
+a{color:#165c81}#app{display:none}#admin{display:none}#signupPanel{display:none}ul{padding-left:20px}.file-entry{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #e3e8ed}.file-entry a{overflow-wrap:anywhere}.file-entry button{width:auto;flex-shrink:0;margin:0;padding:7px 11px;background:#8d3841}.file-entry small{display:block}.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid #dbe2e8;padding:9px 6px;text-align:left;white-space:nowrap}th{background:#edf3f5}button.secondary{background:#647985}#adminGate{display:none}
+</style></head><body><main>
+<h1>진일 통합관리 · 연결 테스트</h1><p><small>본사 총무 · 생산동 · 가공동 공통 HTML</small></p>
+<section id="setup"><label>Supabase 프로젝트 URL</label><input id="url" placeholder="https://xxxx.supabase.co">
+<label>Supabase 공개용 anon/publishable 키</label><input id="key" placeholder="sb_publishable_... 또는 anon key">
+<button id="connect">연결 설정 저장</button><small>서비스 역할 키(service_role)나 비밀번호는 여기에 넣지 마세요. 이 설정은 이 브라우저에만 저장됩니다.</small></section>
+<section id="auth" style="display:none"><label>이메일</label><input id="email" type="email" autocomplete="username">
+<label>비밀번호</label><input id="password" type="password" autocomplete="current-password">
+<button id="login">로그인</button>
+<button id="toggleSignup" type="button" class="secondary">일반 회원가입</button>
+<div id="signupPanel">
+<h3>일반 회원가입 (테스트)</h3>
+<label>가입 이메일</label><input id="signupEmail" type="email" autocomplete="email" placeholder="example@email.com">
+<label>비밀번호 (8자 이상)</label><input id="signupPassword" type="password" autocomplete="new-password">
+<label>소속 부서</label><select id="signupDepartment"><option value="본사 총무">본사 총무</option><option value="생산동">생산동</option><option value="가공동">가공동</option></select>
+<button id="signup" type="button">일반 회원가입 신청</button>
+<small>회원가입은 일반 사용자 권한으로만 처리됩니다. 이메일 인증이 활성화되어 있으면 메일 확인 후 로그인하세요.</small>
+</div>
+<button id="requestReset" type="button">비밀번호 재설정 이메일 받기</button>
+<div id="resetPanel" style="display:none">
+<label>이메일로 받은 6자리 재설정 코드</label><input id="resetCode" inputmode="numeric" autocomplete="one-time-code" placeholder="6자리 코드">
+<label>새 비밀번호 (8자 이상)</label><input id="newPassword" type="password" autocomplete="new-password">
+<button id="applyReset" type="button">코드 확인 및 비밀번호 변경</button>
+<small>6자리 코드는 별도 메일 템플릿 설정이 필요합니다. 기본 방식은 이메일 링크로 비밀번호를 변경하는 것입니다.</small>
+</div><div id="linkResetPanel" style="display:none"><label>새 비밀번호 (8자 이상)</label><input id="linkNewPassword" type="password" autocomplete="new-password"><button id="applyLinkReset" type="button">새 비밀번호 저장</button></div><button id="logout" style="display:none">로그아웃</button></section>
+<section id="app"><p id="who"></p><p id="accountInfo" style="overflow-wrap:anywhere;font-size:13px;color:#526878"></p>
+<label>숫자</label><input id="quantity" type="number" step="any">
+<button id="saveNumber">숫자만 저장</button>
+<label>한글 메모</label><textarea id="memo" rows="4"></textarea>
+<button id="saveMemo">한글만 저장</button>
+<label>첨부 파일</label><input id="attachment" type="file">
+<button id="upload">파일 업로드</button>
+<h3>공유 첨부파일 (테스트: 업로드 20초 후 자동 삭제)</h3>
+<p style="font-size:12px;color:#647985">테스트용 자동 삭제는 업로드한 브라우저가 열린 상태에서 실행됩니다. 브라우저를 닫으면 서버 자동 삭제가 보장되지 않습니다.</p><ul id="files"></ul>
+<button id="refresh">지금 새로고침</button>
+<p><small>60초마다 서버 데이터를 조회합니다. 다른 사람이 입력 중인 칸은 자동으로 덮어쓰지 않습니다.</small></p>
+<section id="admin"><h3>관리자 확인</h3><p>관리자 계정으로 로그인했습니다.</p>
+<button id="openAdmin" type="button">관리자 모드 열기</button>
+<div id="adminGate"><label>관리자 모드 확인번호 (테스트용)</label><input id="adminPin" type="password" inputmode="numeric" maxlength="4" placeholder="4자리"><button id="unlockAdmin" type="button">관리자 모드 확인</button></div>
+<div id="adminContents" style="display:none"><h3>가입 회원 목록</h3><button id="reloadMembers" type="button">회원 목록 새로고침</button><div class="table-wrap"><table><thead><tr><th>이메일</th><th>소속</th><th>권한</th><th>가입일</th></tr></thead><tbody id="memberRows"><tr><td colspan="4">조회 전</td></tr></tbody></table></div><small>회원 목록은 Supabase의 관리자 전용 조회 함수로 불러옵니다.</small>
+<label>관리자 로그인 이메일 변경</label><input id="changeEmail" type="email" placeholder="새 이메일 주소"><button id="applyEmail" type="button">이메일 변경 확인 메일 보내기</button><small>현재 로그인된 계정의 이메일만 변경 요청합니다. Supabase 설정에 따라 기존 이메일과 새 이메일 양쪽에서 확인이 필요할 수 있습니다.</small></div></section>
+</section><p id="status" role="status">연결 설정을 입력하세요.</p>
+</main>
+<script>
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(err => console.warn("PWA 서비스 워커 등록 실패:", err));
+  });
+}
+</script>
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
+const $=id=>document.getElementById(id);let sb=null,profile=null,currentUser=null,dirtyN=false,dirtyM=false,busy=false,recoveryMode=false,adminUnlocked=false;
+const msg=s=>$('status').textContent=s;
+const hasRecoveryLink=()=>location.hash.includes('type=recovery')||new URLSearchParams(location.search).has('code')||new URLSearchParams(location.search).get('type')==='recovery';
+const recoveryLinkPending=hasRecoveryLink();
+const config=JSON.parse(localStorage.getItem('jinil_config')||'{}');
+$('url').value=config.url||'';$('key').value=config.key||'';
+function boot(){
+ const url=$('url').value.trim(),key=$('key').value.trim();
+ if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(url)||!key){msg('프로젝트 URL과 공개용 키를 확인하세요.');return}
+ localStorage.setItem('jinil_config',JSON.stringify({url,key}));
+ sb=createClient(url,key,{auth:{persistSession:true,autoRefreshToken:true}});
+ $('auth').style.display='block';
+ sb.auth.onAuthStateChange((event)=>{
+  if(event==='PASSWORD_RECOVERY'){
+   recoveryMode=true;
+   $('linkResetPanel').style.display='block';
+   $('resetPanel').style.display='none';
+   $('app').style.display='none';
+   msg('비밀번호 재설정 인증 완료. 아래 새 비밀번호를 입력하고 저장하세요.');
+  } else if(!recoveryMode) setTimeout(syncSession,0);
+ });
+ if(recoveryLinkPending){
+  msg('재설정 링크를 확인하는 중입니다. 새 비밀번호 입력창이 나타날 때까지 기다려 주세요. 나타나지 않으면 링크 만료 또는 인증 오류일 수 있습니다.');
+  setTimeout(()=>{if(!recoveryMode)msg('새 비밀번호 입력창이 나타나지 않았습니다. 링크가 만료되었거나 인증이 완료되지 않았을 수 있습니다. 최신 재설정 이메일로 다시 시도하세요.');},4500);
+ }else syncSession();
+}
+$('connect').onclick=boot;
+$('toggleSignup').onclick=()=>{$('signupPanel').style.display=$('signupPanel').style.display==='block'?'none':'block'};
+$('signup').onclick=async()=>{
+ if(!sb)return msg('먼저 Supabase 연결 설정을 저장하세요.');
+ const email=$('signupEmail').value.trim(),password=$('signupPassword').value,department=$('signupDepartment').value;
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return msg('가입 이메일을 확인하세요.');
+ if(password.length<8)return msg('비밀번호를 8자 이상 입력하세요.');
+ const {data,error}=await sb.auth.signUp({email,password,options:{data:{department},emailRedirectTo:location.origin+location.pathname}});
+ if(error)return msg('회원가입 실패: '+error.message);
+ $('signupPassword').value='';
+ if(data.session){msg('회원가입 완료. 일반 회원으로 로그인되었습니다.');await syncSession()}
+ else msg('회원가입 요청 완료. 이메일 인증 설정에 따라 확인 메일을 먼저 열어야 합니다. 이미 등록된 이메일이면 별도 안내 없이 처리될 수 있습니다.');
+};
+$('openAdmin').onclick=()=>{if(profile?.role!=='admin')return msg('관리자만 이용할 수 있습니다.');$('adminGate').style.display='block'};
+$('unlockAdmin').onclick=async()=>{if(profile?.role!=='admin')return msg('관리자 권한이 없습니다.');if($('adminPin').value!=='0000')return msg('관리자 확인번호가 일치하지 않습니다.');adminUnlocked=true;$('adminPin').value='';$('adminGate').style.display='none';$('adminContents').style.display='block';await loadMembers()};
+$('reloadMembers').onclick=loadMembers;
+async function loadMembers(){
+ if(!sb||profile?.role!=='admin'||!adminUnlocked)return msg('관리자 모드를 먼저 여세요.');
+ const {data,error}=await sb.rpc('admin_list_test_members');
+ if(error)return msg('회원 목록 조회 실패: '+error.message+' (함수 설치 및 관리자 권한을 확인하세요.)');
+ const rows=$('memberRows');rows.replaceChildren();
+ if(!data?.length){const tr=rows.insertRow(),td=tr.insertCell();td.colSpan=4;td.textContent='가입 회원이 없습니다.';return}
+ for(const m of data){const tr=rows.insertRow();for(const value of [m.email||'',m.department||'',m.role||'',m.created_at?new Date(m.created_at).toLocaleString('ko-KR'):'']){tr.insertCell().textContent=value}}
+ msg('회원 목록 '+data.length+'명 조회 완료');
+}
+$('login').onclick=async()=>{if(!sb)return;const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)msg('로그인 실패: '+error.message);else await syncSession()};
+$('requestReset').onclick=async()=>{
+ if(!sb)return msg('먼저 Supabase 연결 설정을 저장하세요.');
+ const email=$('email').value.trim();
+ if(!email)return msg('이메일을 먼저 입력하세요.');
+ if(location.protocol!=='https:')return msg('GitHub Pages의 HTTPS 웹주소에서 열어 주세요. 다운로드한 파일에서는 링크 재설정이 작동하지 않습니다.');
+ const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+ if(error)return msg('재설정 메일 요청 실패: '+error.message);
+ $('resetPanel').style.display='none';
+ msg('재설정 이메일을 요청했습니다. 메일에 있는 Reset password 링크를 눌러 이 페이지로 돌아오세요. 메일이 없다면 스팸함을 확인하세요.');
+};
+$('applyReset').onclick=async()=>{
+ if(!sb)return;
+ const email=$('email').value.trim(),token=$('resetCode').value.trim(),password=$('newPassword').value;
+ if(!/^\d{6}$/.test(token))return msg('이메일의 6자리 코드를 입력하세요.');
+ if(password.length<8)return msg('새 비밀번호를 8자 이상 입력하세요.');
+ const verified=await sb.auth.verifyOtp({email,token,type:'recovery'});
+ if(verified.error)return msg('코드 인증 실패: '+verified.error.message);
+ const updated=await sb.auth.updateUser({password});
+ if(updated.error)return msg('비밀번호 변경 실패: '+updated.error.message);
+ $('resetCode').value='';$('newPassword').value='';$('password').value='';
+ $('resetPanel').style.display='none';
+ msg('비밀번호가 변경되었습니다. 새 비밀번호로 로그인하세요.');
+ await sb.auth.signOut();await syncSession();
+};
+$('applyLinkReset').onclick=async()=>{if(!sb||!recoveryMode)return msg('재설정 이메일 링크 인증이 완료되지 않았습니다. 최신 링크로 다시 들어와 주세요.');const password=$('linkNewPassword').value;if(password.length<8)return msg('새 비밀번호를 8자 이상 입력해 줘.');const {error}=await sb.auth.updateUser({password});if(error)return msg('비밀번호 변경 실패: '+error.message);$('linkNewPassword').value='';$('linkResetPanel').style.display='none';recoveryMode=false;await sb.auth.signOut();msg('비밀번호 변경 완료. 새 비밀번호로 로그인해 줘.');};
+$('applyEmail').onclick=async()=>{if(!sb||profile?.role!=='admin')return msg('관리자 로그인 후 이용해 줘.');const email=$('changeEmail').value.trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return msg('새 이메일 주소를 확인해 줘.');const {error}=await sb.auth.updateUser({email,emailRedirectTo:location.origin+location.pathname});if(error)return msg('이메일 변경 요청 실패: '+error.message);msg('이메일 변경 확인 메일을 요청했어. 메일함에서 확인을 완료해 줘.');};
+$('logout').onclick=async()=>{await sb.auth.signOut();profile=null;currentUser=null;adminUnlocked=false;$('adminContents').style.display='none';$('app').style.display='none';$('logout').style.display='none';msg('로그아웃했습니다.')};
+async function syncSession(){
+ if(!sb||recoveryMode)return;const {data:{user},error}=await sb.auth.getUser();
+ if(error||!user){if(recoveryMode)return;profile=null;currentUser=null;adminUnlocked=false;$('adminContents').style.display='none';$('app').style.display='none';$('logout').style.display='none';msg('로그인해 주세요.');return}
+ const result=await sb.from('profiles').select('department,role').eq('id',user.id).single();
+ if(result.error||!result.data){msg('부서 권한을 찾지 못했습니다. 관리자에게 문의하세요.');$('app').style.display='none';return}
+ profile=result.data;currentUser=user;$('accountInfo').textContent=`로그인 아이디(이메일): ${user.email||'확인 불가'} / 사용자 ID: ${user.id}`;$('logout').style.display='block';$('app').style.display='block';
+ $('who').textContent=`접속 부서: ${profile.department} / 권한: ${profile.role}`;
+ $('admin').style.display=profile.role==='admin'?'block':'none';if(profile.role!=='admin'){adminUnlocked=false;$('adminContents').style.display='none';$('adminGate').style.display='none';}
+ await refresh(true);
+}
+$('quantity').addEventListener('input',()=>dirtyN=true);
+$('memo').addEventListener('input',()=>dirtyM=true);
+async function save(field,value){
+ if(!sb||!profile)return;
+ const {error}=await sb.from('shared_test').update({[field]:value}).eq('id',1);
+ if(error){msg('저장 실패: '+error.message);return}
+ if(field==='quantity')dirtyN=false;else dirtyM=false;
+ msg(`${field==='quantity'?'숫자':'한글'} 저장 완료`);await refresh();
+}
+$('saveNumber').onclick=()=>{const s=$('quantity').value;if(s===''||!Number.isFinite(Number(s)))return msg('유효한 숫자를 입력하세요.');save('quantity',Number(s))};
+$('saveMemo').onclick=()=>save('memo',$('memo').value);
+async function refresh(force=false){
+ if(!sb||!profile||busy)return;busy=true;
+ try{
+ const {data,error}=await sb.from('shared_test').select('quantity,memo,updated_at').eq('id',1).single();
+ if(error)throw error;
+ if(force||!dirtyN)$('quantity').value=data.quantity??'';
+ if(force||!dirtyM)$('memo').value=data.memo??'';
+ const files=await sb.from('attachments').select('id,file_name,storage_path,created_at,uploaded_by').order('created_at',{ascending:false}).limit(30);
+ if(files.error)throw files.error;
+ $('files').replaceChildren();
+ for(const f of files.data){
+  const li=document.createElement('li');li.className='file-entry';
+  const info=document.createElement('div'),a=document.createElement('a');
+  a.textContent=f.file_name;a.href='#';
+  a.onclick=async e=>{
+   e.preventDefault();
+   const {data,error}=await sb.storage.from('shared-files').createSignedUrl(f.storage_path,60,{download:f.file_name});
+   if(error)msg('파일 다운로드 실패: '+error.message);
+   else window.open(data.signedUrl,'_blank','noopener');
+  };
+  info.append(a);
+  const detail=document.createElement('small');
+  detail.textContent='업로드: '+(f.created_at?new Date(f.created_at).toLocaleString('ko-KR'):'날짜 미확인');
+  info.append(detail);li.append(info);
+  if(profile.role==='admin'||(currentUser&&f.uploaded_by===currentUser.id)){
+   const del=document.createElement('button');del.type='button';del.textContent='삭제';
+   del.setAttribute('aria-label',f.file_name+' 삭제');
+   del.onclick=()=>deleteAttachment(f,del);
+   li.append(del);
+  }
+  $('files').append(li);
+ }
+ msg('동기화 완료 · '+new Date().toLocaleTimeString('ko-KR'));
+ }catch(e){msg('동기화 실패: '+e.message)}finally{busy=false}
+}
+$('refresh').onclick=()=>refresh();
+async function deleteAttachment(f,button,automatic=false){
+ if(!sb||!currentUser||!profile)return msg('먼저 로그인하세요.');
+ if(profile.role!=='admin'&&f.uploaded_by!==currentUser.id)return msg('본인이 올린 파일만 삭제할 수 있습니다.');
+ if(!automatic&&!confirm(`정말 삭제할까요?\n${f.file_name}\nSupabase에 저장된 실제 파일도 삭제됩니다.`))return;
+ if(button)button.disabled=true;
+ try{
+  // 서버 RLS 정책이 실제 삭제 권한을 검증합니다.
+  const removed=await sb.storage.from('shared-files').remove([f.storage_path]);
+  if(removed.error)throw new Error('Storage 파일 삭제 실패: '+removed.error.message);
+  if(!removed.data?.some(item=>item.name===f.storage_path||f.storage_path.endsWith('/'+item.name))){
+   throw new Error('Storage 삭제 결과를 확인하지 못했습니다. Storage에서 파일 상태를 확인하세요.');
+  }
+  const {data,error}=await sb.from('attachments').delete().eq('id',f.id).select('id');
+  if(error)throw new Error('실제 파일은 삭제됐지만 목록 기록 삭제 실패: '+error.message);
+  if(!data?.length)throw new Error('목록 삭제 권한이 없거나 해당 기록이 없습니다.');
+  await refresh(true);
+  msg('첨부파일 삭제 완료: '+f.file_name);
+ }catch(e){msg(e.message+' (필요하면 새로고침 후 상태를 확인하세요.)')}
+ finally{if(button)button.disabled=false}
+}
+$('upload').onclick=async()=>{
+ if(!sb||!profile||!currentUser)return;const f=$('attachment').files[0];if(!f)return msg('파일을 선택하세요.');
+ if(f.size>10*1024*1024)return msg('테스트에서는 10MB 이하 파일만 허용합니다.');
+ // 원래 이름은 DB에 보관하고, Storage 키는 ASCII 영숫자로만 구성합니다.
+ const extMatch=f.name.match(/\.([A-Za-z0-9]{1,12})$/);
+ const extension=extMatch?'.'+extMatch[1].toLowerCase():'';
+ const id=crypto.randomUUID(),path=id+'/file'+extension;
+ const up=await sb.storage.from('shared-files').upload(path,f,{upsert:false});
+ if(up.error)return msg('파일 업로드 실패: '+up.error.message);
+ const row=await sb.from('attachments').insert({file_name:f.name,storage_path:path,uploaded_by:currentUser.id}).select('id,file_name,storage_path,uploaded_by').single();
+ if(row.error){
+  const cleanup=await sb.storage.from('shared-files').remove([path]);
+  return msg('파일 목록 저장 실패: '+row.error.message+(cleanup.error?' / 임시 파일 정리 실패: '+cleanup.error.message:''));
+ }
+ $('attachment').value='';await refresh();msg('파일 저장 완료: '+f.name+' · 20초 후 자동 삭제 예정 (이 창을 유지하세요)');
+ // 브라우저가 살아 있는 동안만 실행되는 테스트 타이머입니다.
+ // 서버 측 영구 자동 삭제는 별도의 Edge Function + Cron 작업이 필요합니다.
+ const uploaderId=currentUser.id;
+ setTimeout(async()=>{
+  if(!sb||!currentUser||currentUser.id!==uploaderId)return;
+  await deleteAttachment(row.data,null,true);
+ },20000);
+};
+setInterval(()=>{if(profile)refresh()},60000);
+if(config.url&&config.key)boot();
+else if(recoveryLinkPending)msg('비밀번호 재설정 링크로 들어왔습니다. 먼저 이 화면에서 Supabase 프로젝트 URL과 공개용 키를 입력하고 ‘연결 설정 저장’을 눌러 주세요. 그러면 재설정 링크 인증을 이어서 처리합니다.');
+</script></body></html>
