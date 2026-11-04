@@ -1,0 +1,16 @@
+진일 통합관리 PWA 실제 푸시 알림 연결 안내
+
+[중요] ZIP 업로드만으로 푸시가 발송되지 않습니다. 아래 서버 설정까지 완료해야 합니다.
+
+1. GitHub 저장소에 index.html, sw.js, manifest.webmanifest, icon-192.png, icon-512.png 업로드. 기존 index.html 백업 필수.
+2. Supabase SQL Editor에서 push_subscriptions.sql 실행.
+3. Web Push VAPID 키 쌍 생성. 공개키/비밀키는 서로 일치해야 합니다. 예: Node.js 설치 환경에서 `npx web-push generate-vapid-keys`.
+4. Supabase Edge Functions에 push-register 및 push-notify 폴더의 index.ts 배포. Supabase CLI를 쓰는 경우 `supabase functions deploy push-register --no-verify-jwt`, `supabase functions deploy push-notify --no-verify-jwt` (두 함수 모두 자체 인증 검사 포함). CLI를 사용하지 않는다면 대시보드의 함수 편집/배포 기능 활용.
+5. Supabase Edge Function Secrets에 VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_CONTACT_EMAIL(실제 이메일), WEBHOOK_SECRET(충분히 긴 임의 비밀 문자열) 설정. SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY는 Supabase 기본 제공 여부 확인. 비밀키를 GitHub/HTML에 넣지 마세요.
+6. Supabase Dashboard > Database > Webhooks > Create a new hook: 이름 jinil-quantity-push, 테이블 public.shared_test, 이벤트 UPDATE, HTTP Request URL https://hjkcdaqzbsnmwpvpvpti.supabase.co/functions/v1/push-notify, 헤더 x-webhook-secret 에 5번과 동일한 WEBHOOK_SECRET 설정. 페이로드에 old_record 와 record 가 포함되는지 테스트. webhook 서버 전송 설정에 따라 이전 레코드 정보가 누락될 수 있으므로 변경 여부 검증 필요.
+7. 휴대폰에서 설치된 PWA 실행 > 로그인 > '이 휴대폰 알림 등록' 클릭 > 알림 허용.
+8. 다른 기기에서 숫자 변경 후 저장. 앱을 백그라운드로 보내고 알림 확인.
+
+주의: 서버에 웹 푸시용 라이브러리 npm:web-push를 사용합니다. Edge Function 런타임 호환성 및 배포 성공은 실제 Supabase에서 검증해야 합니다. 배포 오류 시 로그 확인이 필요합니다.
+주의: 이 코드는 테스트용 초안입니다. Webhook 호출 중복/재시도에 대한 엄격한 멱등성, 이벤트 순서 보장, 전체 사용자 알림 대상 필터링은 운영 전 보강해야 합니다.
+주의: GitHub Pages에서 이전 sw.js가 캐시되어 있으면 앱을 종료 후 다시 열거나 사이트 데이터를 갱신하세요.
