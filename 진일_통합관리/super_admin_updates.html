@@ -7,8 +7,10 @@
 <header><h1>JINIL · 슈퍼관리자 업데이트 센터</h1><small>V72 개발 브랜치 · 등록 → 격리 테스트 → 승인 → 배포 대상 지정 → 복구</small></header>
 <main>
 <section><p class="warn"><b>운영 주의</b> 이 화면은 V72 작업용 업데이트 관리 기능입니다. '배포 대상 지정'은 Supabase의 버전 포인터를 변경합니다. 기존 29개 HTML 파일이나 GitHub Pages 운영 화면을 직접 교체하지 않습니다. 실제 배포 자동화는 별도 연결·검증 후 사용해야 합니다.</p><p class="muted">HTML 미리보기는 격리된 iframe에서 실행됩니다. 외부 네트워크를 사용하는 코드가 포함될 수 있으므로 신뢰할 수 있는 파일만 올리세요.</p></section>
-<section><h2>1. 로그인 및 슈퍼관리자 권한 확인</h2><div class="row"><div><label>Supabase URL</label><input id="url" placeholder="https://프로젝트.supabase.co"></div><div><label>공개용 키 (service_role 금지)</label><input id="key" type="password"></div><div><label>이메일</label><input id="email" autocomplete="username" type="email"></div><div><label>비밀번호</label><input id="pass" type="password" autocomplete="current-password"></div></div><button id="login">로그인 및 확인</button><button id="logout" disabled>로그아웃</button><p id="status" role="status">로그인이 필요합니다.</p></section>
+<section><h2>1. 로그인 및 슈퍼관리자 권한 확인</h2><input id="url" type="hidden"><input id="key" type="hidden"><p id="savedConnection" class="muted">Supabase 연결 설정을 자동으로 불러옵니다.</p><div class="row"><div><label>이메일</label><input id="email" autocomplete="username" type="email"></div><div><label>비밀번호</label><input id="pass" type="password" autocomplete="current-password"></div></div><button id="login">로그인 및 확인</button><button id="logout" disabled>로그아웃</button><p id="status" role="status">로그인이 필요합니다.</p></section>
 <div id="panel">
+<section><h2>🔧 슈퍼관리자 연결 설정</h2><p class="muted">URL과 공개용 KEY는 이 브라우저에 저장되며 V72 로그인에도 자동 사용됩니다.</p><button id="editConnection" type="button">Supabase 연결 설정 수정</button></section>
+<dialog id="connectionModal" style="border:1px solid #d3e1d6;border-radius:15px;max-width:510px;width:92%;padding:22px;box-shadow:0 20px 60px #15251d40"><h2>Supabase URL·KEY 수정</h2><p class="muted">공개용 publishable / anon 키만 입력하세요. service_role과 secret 키는 저장할 수 없습니다.</p><label for="connectionURL">프로젝트 URL</label><input id="connectionURL" autocomplete="off"><label for="connectionKEY">공개용 KEY</label><input id="connectionKEY" autocomplete="off" type="password"><button id="saveConnection" type="button">저장</button><button id="cancelConnection" type="button">취소</button></dialog>
 <section><h2>2. 기타블록 폴더 등록</h2>
 <p class="muted">이름을 등록하면 기타블록에 새 경로가 만들어지고, 슈퍼관리자 메인 목록에 흐릿하게 표시됩니다. HTML을 넣기 전에는 테스트 대기 상태입니다.</p>
 <label>새 기타블록 이름</label><input id="otherName" maxlength="48" placeholder="예: 작업일지">
@@ -26,6 +28,22 @@ function jinilWheelHtml(html){
  return /<\/body\s*>/i.test(html)?html.replace(/<\/body\s*>/i,script+'</body>'):html+script;
 }
 const $=x=>document.getElementById(x); let sb=null,user=null,versions=[],releases={};
+const CONNECTION_DEFAULT_URL='https://hjkcdaqzbsnmwpvpvpti.supabase.co';
+const CONNECTION_DEFAULT_KEY='sb_publishable_LpBmejeme6ViqGyKuGrchw_F8Z8cVVk';
+const CONNECTION_STORAGE='jinil_config';
+function currentConnection(){let cfg={};try{cfg=JSON.parse(localStorage.getItem(CONNECTION_STORAGE)||'{}')||{}}catch(e){}return {url:cfg.url||CONNECTION_DEFAULT_URL,key:cfg.key||CONNECTION_DEFAULT_KEY}}
+function displayConnection(){const cfg=currentConnection();$('url').value=cfg.url;$('key').value=cfg.key;$('savedConnection').textContent='✓ Supabase 연결 정보 자동 적용: '+cfg.url;return cfg}
+displayConnection();
+$('editConnection').onclick=()=>{if(!user)return;const cfg=currentConnection();$('connectionURL').value=cfg.url;$('connectionKEY').value=cfg.key;$('connectionModal').showModal()};
+$('cancelConnection').onclick=()=>$('connectionModal').close();
+$('saveConnection').onclick=()=>{
+ if(!user)return;
+ const url=$('connectionURL').value.trim().replace(/\/$/,''),key=$('connectionKEY').value.trim();
+ if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)){status('Supabase URL 형식을 확인해 주세요.');return}
+ if(!key||/^sb_secret_/i.test(key)||/service_role/i.test(key)){status('공개용 KEY만 저장할 수 있습니다. secret/service_role KEY는 금지합니다.');return}
+ try{localStorage.setItem(CONNECTION_STORAGE,JSON.stringify({url,key}))}catch(e){status('연결 설정 저장 오류: '+e.message);return}
+ displayConnection();$('connectionModal').close();status('연결 정보 저장 완료. 다음 로그인부터 새 URL·KEY가 적용됩니다.');
+};
 const BLOCKS=["부서/총무부/01_발주서작성/01_발주서작성_V1.html","부서/총무부/02_발주목록확인/02_발주목록확인_V1.html","부서/총무부/03_발주목록검색/03_발주목록검색_V1.html","부서/총무부/04_업체목록확인/04_업체목록확인_V1.html","부서/총무부/05_소재등록/05_소재등록_V1.html","부서/총무부/06_생산부재고확인/06_생산부재고확인_V1.html","부서/총무부/07_테프론재고확인/07_테프론재고확인_V1.html","부서/총무부/08_납품예정달력/08_납품예정달력_V1.html","부서/총무부/09_소재발주_확인/09_소재발주_확인_V1.html","부서/테프론부/01_발주목록확인/01_발주목록확인_V1.html","부서/테프론부/02_발주목록검색/02_발주목록검색_V1.html","부서/테프론부/03_재고확인/03_재고확인_V1.html","부서/테프론부/04_생산부재고확인/04_생산부재고확인_V1.html","부서/테프론부/05_테프론재고확인/05_테프론재고확인_V1.html","부서/테프론부/06_납품예정달력/06_납품예정달력_V1.html","부서/테프론부/07_소재발주_확인/07_소재발주_확인_V1.html","부서/가공부/01_소재발주_확인/01_소재발주_확인_V1.html","부서/가공부/02_입고확인/02_입고확인_V1.html","부서/가공부/03_발주목록확인/03_발주목록확인_V1.html","부서/가공부/04_발주목록검색/04_발주목록검색_V1.html","부서/가공부/05_납품예정달력/05_납품예정달력_V1.html","부서/생산부/01_발주목록확인/01_발주목록확인_V1.html","부서/생산부/02_발주목록검색/02_발주목록검색_V1.html","부서/생산부/03_생산부재고확인/03_생산부재고확인_V1.html","부서/생산부/04_납품예정달력/04_납품예정달력_V1.html","부서/생산부/05_소재발주_확인/05_소재발주_확인_V1.html","기타블록/01_CAD3D생성블록/01_CAD3D생성블록_V1.html","기타블록/02_메모블록/02_메모블록_V1.html","기타블록/03_캡처블록/03_캡처블록_V1.html"];
 const ALL_BLOCKS=new Set(BLOCKS);
 function addBlockOption(key,label){
