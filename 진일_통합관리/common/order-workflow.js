@@ -76,7 +76,7 @@ async function create(){
   const payload={company:$('company').value.trim(),item:$('item').value.trim(),quantity:$('quantity').value.trim(),source:'V72 modular integration'};
   if(!payload.company||!payload.item)throw Error('업체명과 품목을 입력하세요.');
   order=await createOrder(sb,{orderNumber:$('orderNo').value.trim(),payload});
-  block('send',false);info('Supabase 발주 저장 완료: '+order.order_no);
+  block('send',false);info('발주 원본 서버 저장 완료 (미발송): '+order.order_no+'. 부서 조회 화면에는 송부 전까지 표시되지 않습니다.');
  }catch(e){info('저장 오류: '+e.message)}finally{inFlight=false;display()}
 }
 async function send(){
@@ -86,7 +86,7 @@ async function send(){
  inFlight=true;block('send',true);
  try{
   const sent=await sendOrder(sb,{orderId:order.id,recipients});
-  info(sent.length+'개 부서에 송부되었습니다. 대기 상태로 서버에 저장했습니다.');
+  info(sent.length+'개 부서에 대한 송부 대기 기록을 서버에 저장했습니다. 대상 부서의 실제 수신 확인은 아직 완료되지 않았습니다.');
   order=null;display();await refresh();
  }catch(e){info('송부 오류: '+e.message+' 중복 송부 전에 발주 상태를 확인하세요.')}
  finally{inFlight=false;display()}
