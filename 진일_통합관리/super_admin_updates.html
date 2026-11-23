@@ -36,7 +36,7 @@ async function loadCustom(){
  for(const item of data||[])addBlockOption(item.block_key,'기타블록 › '+item.display_name+' · '+item.block_key);
  return data||[];
 }
-function folderSlug(value){return String(value).trim().replace(/\\s+/g,'_').replace(/[^가-힣A-Za-z0-9_]/g,'').replace(/_+/g,'_').slice(0,45)}
+function folderSlug(value){return String(value).trim().replace(/\s+/g,'_').replace(/[^가-힣A-Za-z0-9_]/g,'').replace(/_+/g,'_').slice(0,45)}
 function folderPath(index,slug){const n=String(index).padStart(2,'0');return '기타블록/'+n+'_'+slug+'/'+n+'_'+slug+'_V1.html'}
 $('createOther').onclick=async()=>{
  try{
