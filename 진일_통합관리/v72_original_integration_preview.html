@@ -1530,8 +1530,7 @@ html,body{overscroll-behavior-y:auto!important}
 <h2 style="margin:0 0 8px">진일 V72 원본 디자인 통합 미리보기</h2>
 <p>기존 V72 원본 디자인에 Supabase 회원 인증을 연결한 개발용 미리보기입니다.</p>
 <form id="jinil-live-login">
-<label>Supabase URL<input id="jinil-live-url" placeholder="https://xxxx.supabase.co" required></label>
-<input id="jinil-live-key" type="hidden" value="sb_publishable_LpBmejeme6ViqGyKuGrchw_F8Z8cVVk"><p style="color:#276d44;font-size:12px">✓ Supabase 공개용 키 자동 연결 (직접 입력하지 않아도 됩니다)</p>
+<input id="jinil-live-url" type="hidden" value="https://hjkcdaqzbsnmwpvpvpti.supabase.co"><input id="jinil-live-key" type="hidden" value="sb_publishable_LpBmejeme6ViqGyKuGrchw_F8Z8cVVk"><p style="color:#276d44;font-size:12px">✓ Supabase URL·공개용 KEY 자동 연결 · 이메일과 비밀번호만 입력하세요.</p>
 <label>회원 이메일<input id="jinil-live-email" type="email" required></label>
 <label>비밀번호<input id="jinil-live-password" type="password" autocomplete="current-password" required></label>
 <button type="submit">Supabase 로그인</button>
@@ -1560,7 +1559,7 @@ html,body{overscroll-behavior-y:auto!important}
 <p style="font-size:13px;margin:0 0 10px">부서 블록 26개 및 기타블록 3개(CAD 3D·메모·캡처): HTML 등록 → 테스트 → 승인 → 배포 대상 지정 → 이전 버전 복구</p>
 <a id="jinil-open-update-center" href="./super_admin_updates.html" target="_blank" rel="noopener" style="display:inline-block;background:#20543a;color:white;padding:10px 15px;border-radius:8px;text-decoration:none;font-weight:700">슈퍼관리자 업데이트 센터 열기</a>
 <p style="font-size:12px;color:#806330;margin:10px 0 0">주의: 별도 업데이트 센터는 Supabase 버전 포인터를 관리합니다. V72 원본 메인 블록과의 자동 연결은 아직 통합·검증되지 않았습니다.</p>
-</section><div class="admin-toolbar"><h2>메인 블록 관리</h2><button class="btn primary" id="adminAddMain" type="button">+ 메인 블록 추가</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>블록 이름</th><th>종류</th><th>배치 위치</th><th>관리</th></tr></thead><tbody id="adminMainRows"></tbody></table></div><div class="admin-toolbar"><h2>블록 종류 관리</h2><button class="btn primary" id="adminAddType" type="button">+ 종류 추가</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>종류 이름</th><th>구분</th><th>관리</th></tr></thead><tbody id="adminTypeRows"></tbody></table></div><section class="admin-config"><h3>회원 계정 관리</h3><p style="color:#b42318;font-size:12px">긴급 복구는 관리자 승인 후 8자리 임시 비밀번호로 진행하는 로컬 테스트 기능입니다. 실제 운영에는 추가 본인 인증이 필요합니다. 승인 후 10시간 또는 비밀번호 변경 시 즉시 종료됩니다. 실제 이메일 발송은 서버 연동 전에는 지원되지 않습니다.</p><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>이메일</th><th>권한 / 복구 상태</th><th>관리</th></tr></thead><tbody id="adminMemberRows"></tbody></table></div></section><section class="admin-config"><h3>Supabase 연동 설정</h3><p>설정값은 기본적으로 가려집니다. 공개용 키만 입력하세요. service_role 키나 푸시 발송 비밀키는 입력하지 마세요.</p><label for="supabaseUrl">Supabase 프로젝트 URL</label><div class="admin-field-row"><input id="supabaseUrl" type="password" autocomplete="off"><button class="btn" type="button" id="showSupabaseUrl">표시</button></div><label for="supabaseKey">Supabase 공개용 anon / publishable 키</label><div class="admin-field-row"><input id="supabaseKey" type="password" autocomplete="off"><button class="btn" type="button" id="showSupabaseKey">표시</button></div><button class="btn primary" type="button" id="saveSupabase">연동 설정 저장</button><p>현재는 로컬 설정 저장 단계이며 실제 Supabase 인증 및 서버 보안 정책은 연결되지 않았습니다. 화면 마스킹은 데이터 암호화를 의미하지 않습니다.</p></section><section class="admin-config"><h3>푸시 알림 관리</h3><p>향후 inowkim-glitch.github.io의 푸시 기능과 연결할 관리자 전용 설정 화면입니다. 현재 발송 기능은 연결 전입니다.</p><label for="pushAudience">알림 대상</label><select id="pushAudience"><option value="all">전체 회원</option></select><label for="pushTitle">알림 제목</label><input id="pushTitle" placeholder="알림 제목"><label for="pushBody">알림 내용</label><textarea id="pushBody" rows="3" placeholder="전달할 내용을 입력하세요"></textarea><button class="btn" type="button" id="pushPreview">발송 전 미리보기</button><button class="btn" type="button" disabled title="서버 연동 후 사용">푸시 발송 (연동 대기)</button><p>발송 내역과 기기 등록 현황은 서버 연동 후 표시됩니다.</p></section><div class="admin-toolbar"><h2>관리자 설정</h2><button class="btn" id="adminChangePassword" type="button">비밀번호 변경</button></div></div></section><section class="detail-screen" id="detail"><div class="detail-top"><button class="back" id="back">← 메인으로 돌아가기</button><span id="detailBreadcrumb"></span></div><div class="detail-grid"><section class="workspace detail-workspace"><div class="section-head"><div class="workspace-heading"><h1 class="section-title" id="detailName">메인 블록 배치 공간</h1><span class="eyebrow">WORKSPACE</span></div><span class="count" id="detailCount">업무 기능 페이지</span></div><div class="detail-canvas" id="detailCanvas"><div class="detail-placeholder">준비중</div></div></section><aside class="sidebar detail-sidebar"><div class="eyebrow">BLOCK LIBRARY</div><h2 class="side-title">블록 목록</h2><p class="side-hint">업무 기능을 선택하세요. 해당 기능을 이 공간에서 실행합니다.</p><div id="detailSourceList" class="side-list"></div><button class="add" id="detailAddBtn" type="button">＋ 새로운 블록 추가</button><p class="footnote">기능 화면은 순차적으로 추가됩니다.</p></aside></div></section>
+</section><div class="admin-toolbar"><h2>메인 블록 관리</h2><button class="btn primary" id="adminAddMain" type="button">+ 메인 블록 추가</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>블록 이름</th><th>종류</th><th>배치 위치</th><th>관리</th></tr></thead><tbody id="adminMainRows"></tbody></table></div><div class="admin-toolbar"><h2>블록 종류 관리</h2><button class="btn primary" id="adminAddType" type="button">+ 종류 추가</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>종류 이름</th><th>구분</th><th>관리</th></tr></thead><tbody id="adminTypeRows"></tbody></table></div><section class="admin-config"><h3>회원 계정 관리</h3><p style="color:#b42318;font-size:12px">긴급 복구는 관리자 승인 후 8자리 임시 비밀번호로 진행하는 로컬 테스트 기능입니다. 실제 운영에는 추가 본인 인증이 필요합니다. 승인 후 10시간 또는 비밀번호 변경 시 즉시 종료됩니다. 실제 이메일 발송은 서버 연동 전에는 지원되지 않습니다.</p><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>이메일</th><th>권한 / 복구 상태</th><th>관리</th></tr></thead><tbody id="adminMemberRows"></tbody></table></div></section><section class="admin-config"><h3>Supabase 연결 설정</h3><p>URL과 공개용 KEY는 이 브라우저에 저장되어 다음 로그인과 업데이트 센터에서 자동 사용됩니다.</p><button class="btn primary" id="openSupabaseSettings" type="button">⚙ Supabase 연결 설정 변경</button><p id="supabaseConfigStatus" style="font-size:12px;color:#486c56"></p></section><dialog id="supabaseSettingsModal"><div class="modal" style="max-width:540px"><h2>Supabase 연결 설정</h2><p>슈퍼관리자 전용입니다. 공개용 anon / publishable KEY만 저장하세요. <b>service_role·secret 키는 금지</b>입니다.</p><label for="supabaseUrl">Supabase URL</label><div class="admin-field-row"><input class="control" id="supabaseUrl" type="password" autocomplete="off"><button class="btn" type="button" id="showSupabaseUrl">표시</button></div><label for="supabaseKey">Supabase 공개용 KEY</label><div class="admin-field-row"><input class="control" id="supabaseKey" type="password" autocomplete="off"><button class="btn" type="button" id="showSupabaseKey">표시</button></div><div class="actions"><button class="btn" id="closeSupabaseSettings" type="button">취소</button><button class="btn primary" id="saveSupabase" type="button">연결 정보 저장</button></div><p style="font-size:12px;color:#637464">이 기기와 같은 웹 주소에서만 설정이 유지됩니다. 다른 기기에는 별도 저장이 필요합니다. 저장 후 다음 로그인에 적용됩니다.</p></div></dialog><section class="admin-config"><h3>푸시 알림 관리</h3><p>향후 inowkim-glitch.github.io의 푸시 기능과 연결할 관리자 전용 설정 화면입니다. 현재 발송 기능은 연결 전입니다.</p><label for="pushAudience">알림 대상</label><select id="pushAudience"><option value="all">전체 회원</option></select><label for="pushTitle">알림 제목</label><input id="pushTitle" placeholder="알림 제목"><label for="pushBody">알림 내용</label><textarea id="pushBody" rows="3" placeholder="전달할 내용을 입력하세요"></textarea><button class="btn" type="button" id="pushPreview">발송 전 미리보기</button><button class="btn" type="button" disabled title="서버 연동 후 사용">푸시 발송 (연동 대기)</button><p>발송 내역과 기기 등록 현황은 서버 연동 후 표시됩니다.</p></section><div class="admin-toolbar"><h2>관리자 설정</h2><button class="btn" id="adminChangePassword" type="button">비밀번호 변경</button></div></div></section><section class="detail-screen" id="detail"><div class="detail-top"><button class="back" id="back">← 메인으로 돌아가기</button><span id="detailBreadcrumb"></span></div><div class="detail-grid"><section class="workspace detail-workspace"><div class="section-head"><div class="workspace-heading"><h1 class="section-title" id="detailName">메인 블록 배치 공간</h1><span class="eyebrow">WORKSPACE</span></div><span class="count" id="detailCount">업무 기능 페이지</span></div><div class="detail-canvas" id="detailCanvas"><div class="detail-placeholder">준비중</div></div></section><aside class="sidebar detail-sidebar"><div class="eyebrow">BLOCK LIBRARY</div><h2 class="side-title">블록 목록</h2><p class="side-hint">업무 기능을 선택하세요. 해당 기능을 이 공간에서 실행합니다.</p><div id="detailSourceList" class="side-list"></div><button class="add" id="detailAddBtn" type="button">＋ 새로운 블록 추가</button><p class="footnote">기능 화면은 순차적으로 추가됩니다.</p></aside></div></section>
 </div>
 <dialog id="editor"><form class="modal" id="editForm"><h2 id="modalTitle">새로운 블럭 추가</h2><p>블록 종류를 선택하고 이름을 입력하세요.</p><div class="type-heading"><label class="field" for="blockType">블록 종류</label><button type="button" id="addType" class="type-plus" title="관리자: 블록 종류 추가">＋</button></div><select class="control" id="blockType" required></select><p id="typeLockedHint" class="type-locked-hint" hidden>생성된 블록은 종류를 변경할 수 없습니다. 이름만 수정할 수 있습니다.</p><label class="field" for="blockName">블록 이름</label><input class="control" id="blockName" maxlength="35" placeholder="예: 발주 현황" required autocomplete="off"><div class="actions"><button type="button" class="btn" id="cancel">취소</button><button class="btn primary" type="submit" id="saveBtn">추가하기</button></div></form></dialog>
 <dialog id="colorDialog"><div class="modal">
@@ -3156,9 +3155,36 @@ function renderMembers(){const body=$('adminMemberRows');body.replaceChildren();
 $('authEmergencyForm').onsubmit=async e=>{e.preventDefault();const email=$('emergencyEmail').value.trim().toLowerCase(),code=$('emergencyCode').value.trim(),m=members(),r=m[email]?.emergency;if(!m[email]?.active||!r||r.expires<=Date.now()||!/^\d{6}$/.test(code)||await authHash(code)!==r.hash){$('authMessage').textContent='긴급 로그인 승인이 없거나 임시 비밀번호가 틀렸거나 만료되었습니다.';return}loggedEmail=email;emergencySession=true;localStorage.setItem(AUTH_REMEMBER,email);sessionStorage.setItem(AUTH_SESSION,JSON.stringify({email,expires:r.expires,emergency:true}));syncAuth();render();alert('긴급 로그인 상태입니다. 비밀번호 변경 후 정상 로그인으로 복귀하세요.');};
 
 const oldRenderAdmin=renderAdmin;renderAdmin=function(){oldRenderAdmin();renderMembers()};
-const SUPA_KEY='jinil-supabase-config-demo-v1';try{const cfg=JSON.parse(localStorage.getItem(SUPA_KEY)||'{}');$('supabaseUrl').value=cfg.url||'';$('supabaseKey').value=cfg.key||''}catch(e){}
+// URL and publishable KEY are nonsecret public client configuration; never store service_role or secret keys.
+const SUPA_KEY='jinil-supabase-config-demo-v1', SUPA_SHARED_KEY='jinil_config';
+const SUPA_DEFAULT_URL='https://hjkcdaqzbsnmwpvpvpti.supabase.co';
+const SUPA_DEFAULT_KEY=$('jinil-live-key').value;
+function loadSupabaseConfig(){
+ let cfg={};try{cfg=JSON.parse(localStorage.getItem(SUPA_SHARED_KEY)||'null')||JSON.parse(localStorage.getItem(SUPA_KEY)||'null')||{}}catch(e){}
+ return {url:cfg.url||SUPA_DEFAULT_URL,key:cfg.key||SUPA_DEFAULT_KEY};
+}
+function refreshSupabaseConfig(){
+ const cfg=loadSupabaseConfig();
+ $('supabaseUrl').value=cfg.url;$('supabaseKey').value=cfg.key;
+ $('jinil-live-url').value=cfg.url;$('jinil-live-key').value=cfg.key;
+ $('supabaseConfigStatus').textContent='현재 연결: '+cfg.url+' · 공개용 KEY 저장됨';
+}
+refreshSupabaseConfig();
+$('openSupabaseSettings').onclick=()=>{
+ if(jinilLiveRole!=='super_admin'||!document.body.classList.contains('jinil-live-authorized')){toast('슈퍼관리자 인증 후 설정할 수 있습니다.');return}
+ refreshSupabaseConfig();$('supabaseSettingsModal').showModal();
+};
+$('closeSupabaseSettings').onclick=()=>$('supabaseSettingsModal').close();
 ['Url','Key'].forEach(n=>{$('showSupabase'+n).onclick=()=>{const input=$('supabase'+n);input.type=input.type==='password'?'text':'password';$('showSupabase'+n).textContent=input.type==='password'?'표시':'숨기기'}});
-$('saveSupabase').onclick=()=>{localStorage.setItem(SUPA_KEY,JSON.stringify({url:$('supabaseUrl').value.trim(),key:$('supabaseKey').value.trim()}));$('supabaseUrl').type='password';$('supabaseKey').type='password';toast('연동 설정을 이 브라우저에 저장했습니다.')};
+$('saveSupabase').onclick=()=>{
+ if(jinilLiveRole!=='super_admin'||!document.body.classList.contains('jinil-live-authorized'))return;
+ const url=$('supabaseUrl').value.trim().replace(/\/$/,''),key=$('supabaseKey').value.trim();
+ if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)){toast('Supabase URL 형식을 확인하세요.');return}
+ if(!key||/^sb_secret_/i.test(key)||/service_role/i.test(key)){toast('공개용 KEY만 입력하세요. secret/service_role 키는 저장할 수 없습니다.');return}
+ try{localStorage.setItem(SUPA_SHARED_KEY,JSON.stringify({url,key}));localStorage.setItem(SUPA_KEY,JSON.stringify({url,key}))}catch(e){toast('설정을 저장하지 못했습니다: '+e.message);return}
+ $('supabaseUrl').type='password';$('supabaseKey').type='password';
+ refreshSupabaseConfig();$('supabaseSettingsModal').close();toast('연결 정보를 저장했습니다. 다음 로그인에 자동 적용됩니다.');
+};
 $('pushPreview').onclick=()=>{alert('푸시 알림 미리보기\n\n'+($('pushTitle').value||'(제목 없음)')+'\n'+($('pushBody').value||'(내용 없음)')+'\n\n※ 실제 발송되지 않습니다.')};
 
 // V51: local-only order reset, kiosk lock and arrival notification.
@@ -3232,7 +3258,7 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
  const message=LIVE_ID('jinil-live-msg');
  let liveClient=null;
  const msg=t=>{message.textContent=t};
- try{const config=JSON.parse(localStorage.getItem('jinil_config')||'{}');LIVE_ID('jinil-live-url').value=config.url||'';/* Use project-verified publishable key, not cached browser input. */}catch{}
+ try{const config=JSON.parse(localStorage.getItem('jinil_config')||'{}');LIVE_ID('jinil-live-url').value=config.url||'https://hjkcdaqzbsnmwpvpvpti.supabase.co';if(config.key&&!/^sb_secret_/i.test(config.key))LIVE_ID('jinil-live-key').value=config.key}catch{}
  const normalize=v=>({'본사 총무':'총무부','생산동':'생산부','가공동':'가공부','테프론동':'테프론부'}[v]||v||'');
 function jinilWheelHtml(html){
  const script='<script src="'+new URL('./common/pointer-wheel.js',location.href).href+'"><'+'/script>';
@@ -3325,7 +3351,7 @@ function jinilWheelHtml(html){
  });
 
  async function authenticate(){
-  const url=LIVE_ID('jinil-live-url').value.trim(),key='sb_publishable_LpBmejeme6ViqGyKuGrchw_F8Z8cVVk';
+  const url=LIVE_ID('jinil-live-url').value.trim(),key=LIVE_ID('jinil-live-key').value.trim();
   if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(url)||!key)throw Error('Supabase URL 또는 공개용 키를 확인하세요.');
   const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
   liveClient=createClient(url,key);
