@@ -3211,17 +3211,17 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
   if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(url)||!key)throw Error('Supabase URL 또는 공개용 키를 확인하세요.');
   const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
   liveClient=createClient(url,key);
-  let result=await liveClient.auth.getUser();
-  if(!result.data?.user){
-    const signed=await liveClient.auth.signInWithPassword({email:LIVE_ID('jinil-live-email').value.trim(),password:LIVE_ID('jinil-live-password').value});
-    if(signed.error)throw signed.error;
-    result=await liveClient.auth.getUser();
-  }
-  if(!result.data?.user)throw Error('인증된 회원이 없습니다.');
+  // Always authenticate the account explicitly entered, not a stale saved session.
+  const requestedEmail=LIVE_ID('jinil-live-email').value.trim().toLowerCase();
+  if(!requestedEmail)throw Error('로그인 이메일을 입력하세요.');
+  const signed=await liveClient.auth.signInWithPassword({email:requestedEmail,password:LIVE_ID('jinil-live-password').value});
+  if(signed.error)throw signed.error;
+  const result=await liveClient.auth.getUser();
+  if(!result.data?.user||result.data.user.email?.toLowerCase()!==requestedEmail)throw Error('로그인 계정이 일치하지 않습니다.');
   const u=result.data.user;
   const p=await liveClient.from('profiles').select('role,department').eq('id',u.id).single();
   if(p.error||!p.data)throw Error('등록된 회원 권한을 확인할 수 없습니다.');
-  jinilLiveRole=p.data.role;
+  jinilLiveRole=String(p.data.role||'').trim();
   jinilLiveDepartment=normalize(p.data.department);
   loggedEmail=u.email||'';
   emergencySession=false;
@@ -3238,6 +3238,8 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
   sessionStorage.removeItem(AUTH_SESSION);
   localStorage.setItem('jinil_config',JSON.stringify({url,key}));
   syncAuth();render();
+  const roleName=jinilLiveRole==='super_admin'?'슈퍼관리자':jinilLiveRole==='admin'?'관리자':'일반회원';
+  LIVE_ID('currentAccount').textContent=u.email+' · '+roleName;
   const header=document.querySelector('header');
   const label=document.createElement('span');
   label.textContent='⚠ 통합 미리보기 · 원본 업무 데이터는 로컬 시험용';
@@ -3249,7 +3251,9 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
    document.body.classList.remove('jinil-live-authorized');gate.hidden=false;
    LIVE_ID('jinil-live-password').value='';syncAuth();msg('로그아웃했습니다.');
   };
-  if(p.data.role!=='super_admin')LIVE_ID('adminEntry').hidden=true;
+  LIVE_ID('adminEntry').hidden=jinilLiveRole!=='super_admin';
+  const largeAdmin=LIVE_ID('v32MainAdmin');
+  if(largeAdmin)largeAdmin.hidden=jinilLiveRole!=='super_admin';
  }
  LIVE_ID('jinil-live-login').onsubmit=async e=>{
   e.preventDefault();msg('Supabase 로그인 확인 중…');
