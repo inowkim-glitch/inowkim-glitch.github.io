@@ -13,12 +13,15 @@ a{color:#285c3e} </style></head><body><main><a href="../../../index.html">← WO
 <script type="module">
 const DEPT="생산부",MODE="supplier";
 const $=id=>document.getElementById(id),canonical=v=>({'본사 총무':'총무부','생산동':'생산부','가공동':'가공부','테프론동':'테프론부'}[v]||v);
-let sb=null,profile=null,data=[],channel=null,busy=false;
+let sb=null,profile=null,data=[],channel=null,busy=false,canMonitor=false;
 function status(t){$('info').textContent=t}
 function allowed(){
- const own=canonical(profile?.department),admin=profile?.role==='admin';
- if(MODE==='request'||MODE==='receive')return own==='가공부'||admin;
- return own===DEPT||admin;
+ const own=canonical(profile?.department),role=profile?.role;
+ if(role==='super_admin')return true;
+ if(role==='admin')return canMonitor;
+ if(role!=='staff')return false;
+ if(MODE==='request'||MODE==='receive')return own==='가공부';
+ return own===DEPT;
 }
 const ID=()=>crypto.randomUUID().slice(0,8).toUpperCase();
 try{const saved=JSON.parse(localStorage.getItem('jinil_config')||'{}');$('url').value=saved.url||'';$('key').value=saved.key||'';}catch{}
@@ -31,15 +34,15 @@ function draw(){
  const head=document.createElement('h3');head.textContent=r.request_no+' · '+r.material_name+' ['+r.status+']';
  const desc=document.createElement('p');desc.textContent='규격 '+r.specification+' / 요청 '+r.requested_qty+' '+r.unit+' / 보유 '+r.supplier_department+' / 출고 '+(r.shipped_qty??'미입력')+' / 실제 입고 '+(r.received_qty??'미확정');
  card.append(head,desc);
- const own=canonical(profile?.department),admin=profile?.role==='admin';
- if((admin||own===r.supplier_department)&&MODE==='supplier'&&r.status==='대기'){
+ const own=canonical(profile?.department),canWrite=profile?.role==='super_admin'||profile?.role==='staff';
+ if((canWrite&&(profile.role==='super_admin'||own===r.supplier_department))&&MODE==='supplier'&&r.status==='대기'){
   const btn=document.createElement('button');btn.textContent='요청 확인';btn.onclick=()=>transition(r,'확인');card.append(btn)
  }
- if((admin||own===r.supplier_department)&&MODE==='supplier'&&r.status==='확인'){
+ if((canWrite&&(profile.role==='super_admin'||own===r.supplier_department))&&MODE==='supplier'&&r.status==='확인'){
   const wrap=document.createElement('div');wrap.className='actions';const qty=document.createElement('input');qty.type='number';qty.min='0.001';qty.step='0.001';qty.placeholder='실제 출고량';qty.value=r.requested_qty;qty.setAttribute('aria-label','실제 출고량');
   const btn=document.createElement('button');btn.textContent='출고 기록';btn.onclick=()=>transition(r,'출고',qty.value);wrap.append(qty,btn);card.append(wrap)
  }
- if((admin||own==='가공부')&&MODE==='receive'&&r.status==='출고'){
+ if((canWrite&&(profile.role==='super_admin'||own==='가공부'))&&MODE==='receive'&&r.status==='출고'){
   const wrap=document.createElement('div');wrap.className='actions',qty=document.createElement('input');qty.type='number';qty.min='0.001';qty.step='0.001';qty.value=r.shipped_qty??r.requested_qty;qty.setAttribute('aria-label','실제 입고량');
   const btn=document.createElement('button');btn.textContent='실제 입고 확인 및 완료';btn.onclick=()=>transition(r,'입고완료',qty.value);wrap.append(qty,btn);card.append(wrap)
  }
@@ -56,7 +59,7 @@ async function refresh(){
  }catch(e){status('조회 오류: '+e.message)}finally{busy=false}
 }
 async function transition(row,next,qty){
- if(busy)return;
+ if(busy||!allowed()||profile?.role==='admin')return status('변경 권한이 없습니다.');
  const patch={status:next};if(next==='출고'||next==='입고완료'){
  const amount=Number(qty);if(!Number.isFinite(amount)||amount<=0)return status('실제 수량을 양수로 입력하세요.');
  patch[next==='출고'?'shipped_qty':'received_qty']=amount;
@@ -72,16 +75,21 @@ $('login').onclick=async()=>{
  const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');if(channel&&sb)await sb.removeChannel(channel);sb=createClient(url,key);
  let {data:{user}}=await sb.auth.getUser();if(!user){const r=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(r.error)throw r.error;user=r.data.user}
  if(!user)throw Error('로그인 실패');
- const p=await sb.from('profiles').select('department,role').eq('id',user.id).single();if(p.error)throw p.error;profile=p.data;
+ const p=await sb.from('profiles').select('department,role').eq('id',user.id).single();if(p.error)throw p.error;profile=p.data;canMonitor=false;
+ if(profile.role==='admin'){
+  const path=decodeURIComponent(location.pathname),key=path.slice(path.indexOf('부서/'));
+  const grant=await sb.from('jinil_block_access').select('block_key').eq('user_id',user.id).eq('block_key',key).maybeSingle();
+  if(grant.error)throw grant.error;canMonitor=!!grant.data;
+ }
  if(!allowed()){profile=null;throw Error('해당 부서 기능 접근 권한이 없습니다.')}
  $('identity').textContent=profile.department+' / '+profile.role;$('workspace').hidden=false;
- if(MODE==='request')$('requestSection').hidden=false;
+ if(MODE==='request')$('requestSection').hidden=profile.role==='admin';
  localStorage.setItem('jinil_config',JSON.stringify({url,key}));await refresh();
  channel=sb.channel('jinil-mat-'+DEPT+'-'+ID()).on('postgres_changes',{event:'*',schema:'public',table:'jinil_material_requests'},refresh).subscribe();
  }catch(e){status('연결 오류: '+e.message)}
 };
 if(MODE==='request')$('newRequest').onsubmit=async e=>{
- e.preventDefault();if(busy||!allowed())return;const form=new FormData(e.target);
+ e.preventDefault();if(busy||!allowed()||profile?.role==='admin')return;const form=new FormData(e.target);
  const payload=Object.fromEntries(form.entries());payload.requested_qty=Number(payload.requested_qty);
  if(!(payload.requested_qty>0))return status('요청량은 양수여야 합니다.');
  busy=true;try{const r=await sb.from('jinil_material_requests').insert(payload);if(r.error)throw r.error;
@@ -89,7 +97,7 @@ if(MODE==='request')$('newRequest').onsubmit=async e=>{
  }catch(err){status('요청 실패: '+err.message)}finally{busy=false;await refresh()}
 };
 $('refresh').onclick=refresh;
-$('logout').onclick=async()=>{if(channel&&sb)await sb.removeChannel(channel);if(sb)await sb.auth.signOut();sb=null;profile=null;data=[];$('workspace').hidden=true;if(MODE==='request')$('requestSection').hidden=true;$('identity').textContent='로그아웃';status('로그아웃했습니다.')};
+$('logout').onclick=async()=>{if(channel&&sb)await sb.removeChannel(channel);if(sb)await sb.auth.signOut();sb=null;profile=null;canMonitor=false;data=[];$('workspace').hidden=true;if(MODE==='request')$('requestSection').hidden=true;$('identity').textContent='로그아웃';status('로그아웃했습니다.')};
 $('search').oninput=draw;$('filter').onchange=draw;
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&profile)refresh()});
 setInterval(()=>{if(profile)refresh()},60000);
