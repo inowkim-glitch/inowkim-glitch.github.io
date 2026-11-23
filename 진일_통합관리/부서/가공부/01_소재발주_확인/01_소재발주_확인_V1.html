@@ -1,1 +1,96 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>진일 | 가공부 소재발주_확인</title><link rel="stylesheet" href="../../../department.css"><style>body{padding:16px}main{max-width:1060px;margin:auto;background:white;border:1px solid #dce6df;border-radius:16px;padding:22px}h1{font-size:23px}p{line-height:1.6}.warning{padding:12px;border:1px solid #dfc89b;border-radius:9px;background:#fff8e9;color:#72501d}.tools{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}input,select,textarea{padding:9px;border:1px solid #bacbbc;border-radius:8px;max-width:100%;font:inherit}button{background:#24523d;color:white;border:0;border-radius:8px;padding:10px 13px;cursor:pointer}button:disabled{opacity:.5}.tools input{flex:1;min-width:160px}.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}label{display:grid;gap:5px;font-size:13px;font-weight:700}label input,label textarea{width:100%}#records{overflow:auto}table{border-collapse:collapse;width:100%;margin-top:12px}th,td{border-bottom:1px solid #dce4dc;padding:11px 8px;text-align:left;vertical-align:top;font-size:13px}td{overflow-wrap:anywhere}th{background:#f5f8f5}.secondary{background:#e9eee9;color:#234}#status{color:#536c59;font-size:13px}.panel{border:1px solid #dce5dd;padding:16px;border-radius:12px;margin:14px 0}@media(max-width:600px){main{padding:14px}table{min-width:640px}}</style></head><body><main><p><a href="../../../index.html">← WORKSPACE</a></p><h1>가공부 · 소재발주_확인</h1><p class="warning"><strong>서버 연동 개발용 화면</strong> · Supabase 인증과 권한에 따라 조회·저장합니다. V72 원본 업무 기능 전체 이식 및 서울·화성 실기기 검증은 아직 완료되지 않았습니다. 기존 로컬 기록은 자동 이관되지 않습니다.</p><section class="panel"><h2>로컬 시험 입력</h2><form id="edit"><div class="fields"><label>요청번호<input name="f0" type="text" required></input></label><label>소재명<input name="f1" type="text" ></input></label><label>규격<input name="f2" type="text" ></input></label><label>요청수량<input name="f3" type="number" ></input></label><label>요청부서<input name="f4" type="text" ></input></label><label>진행상태<input name="f5" type="text" ></input></label></div><div class="tools"><button type="submit">로컬 저장</button><button type="reset" class="secondary">입력 초기화</button></div></form></section><section class="panel"><h2>조회 및 필터</h2><div class="tools"><input id="query" aria-label="검색" placeholder="전체 항목 검색"><button id="export" class="secondary">CSV 내보내기</button><button id="clear" class="secondary">로컬 데이터 삭제</button></div><p id="status" role="status"></p><div id="records"><table><thead><tr><th>요청번호</th><th>소재명</th><th>규격</th><th>요청수량</th><th>요청부서</th><th>진행상태</th><th>관리</th></tr></thead><tbody id="rows"></tbody></table></div></section><script>window.JINIL_WORKSPACE_CONFIG={"key":"가공부:소재발주_확인","department":"가공부","readonly":false,"calendar":false};</script><script type="module" src="../../../common/workspace-records.js"></script></main></body></html>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>진일 V72 | 가공부 소재발주_확인</title><link rel="stylesheet" href="../../../department.css"><style>
+body{padding:15px}main{background:white;border:1px solid #dbe5df;border-radius:17px;padding:20px;max-width:1100px;margin:0 auto}h1{font-size:23px}.notice{border:1px solid #eed8b0;background:#fff9ee;padding:13px;border-radius:9px}
+input,select,button{padding:10px;border:1px solid #b9ccb9;border-radius:9px;font:inherit}button{background:#26513d;color:white;cursor:pointer}button:disabled{opacity:.5}
+label{display:flex;flex-direction:column;gap:5px;margin:7px 0;font-size:13px;font-weight:bold}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:11px}
+.card{border:1px solid #cddbcc;border-radius:12px;margin:10px 0;padding:15px;background:#f7faf6;overflow-wrap:anywhere}.actions{display:flex;flex-wrap:wrap;gap:8px}
+small{color:#526957}#info{white-space:pre-wrap;min-height:45px;background:#eaf3ea;padding:11px;border-radius:8px}
+a{color:#285c3e} </style></head><body><main><a href="../../../index.html">← WORKSPACE</a><h1>가공부 · 소재발주 확인</h1>
+<p class="notice">가공부 내부 소재 요청은 고객 발주와 별도입니다. 요청 부서 확인·출고 뒤 <strong>가공부에서 실제 입고량을 입력하고 최종 완료</strong>합니다. 재고는 자동 차감하지 않습니다. 브라우저·실기기 검증 전 개발 화면입니다.</p>
+<section><h2>Supabase 연결 및 로그인</h2><div class="grid"><label>프로젝트 URL<input id="url" type="url" placeholder="https://xxxx.supabase.co"></label><label>공개용 키<input id="key" autocomplete="off"></label><label>이메일<input id="email" type="email" autocomplete="username"></label><label>비밀번호<input id="password" type="password" autocomplete="current-password"></label></div><div class="actions"><button id="login">연결·로그인</button><button id="logout">로그아웃</button><button id="refresh">서버 새로고침</button></div><small id="identity">로그인 전</small></section>
+<section id="requestSection" hidden><h2>가공부 소재 요청 신규 등록</h2><form id="newRequest"><div class="grid"><label>요청번호<input name="request_no" required></label><label>소재명<input name="material_name" required></label><label>규격<input name="specification"></label><label>요청량<input name="requested_qty" type="number" min="0.001" step="0.001" required></label><label>단위<input name="unit" value="개"></label><label>보유 부서<select name="supplier_department"><option value="생산부">생산부</option><option value="테프론부">테프론부</option><option value="총무부">총무부 (외부 소재)</option></select></label></div><button>요청 등록</button></form></section>
+<section hidden id="workspace"><h2>요청 현황</h2><div class="actions"><label>검색<input id="search" type="search" placeholder="요청번호·소재명"></label><label>상태<select id="filter"><option value="">전체</option><option>대기</option><option>확인</option><option>출고</option><option>입고완료</option></select></label></div><div id="records"></div></section>
+<pre id="info" role="status">연결 대기 중</pre>
+<script type="module">
+const DEPT="가공부",MODE="request";
+const $=id=>document.getElementById(id),canonical=v=>({'본사 총무':'총무부','생산동':'생산부','가공동':'가공부','테프론동':'테프론부'}[v]||v);
+let sb=null,profile=null,data=[],channel=null,busy=false;
+function status(t){$('info').textContent=t}
+function allowed(){
+ const own=canonical(profile?.department),admin=profile?.role==='admin';
+ if(MODE==='request'||MODE==='receive')return own==='가공부'||admin;
+ return own===DEPT||admin;
+}
+const ID=()=>crypto.randomUUID().slice(0,8).toUpperCase();
+try{const saved=JSON.parse(localStorage.getItem('jinil_config')||'{}');$('url').value=saved.url||'';$('key').value=saved.key||'';}catch{}
+if(MODE==='request')document.querySelector('[name=request_no]').value='MAT-'+new Date().toISOString().slice(0,10)+'-'+ID();
+function draw(){
+ $('records').replaceChildren();let n=0;const search=$('search').value.trim().toLowerCase(),f=$('filter').value;
+ for(const r of data){if(f&&r.status!==f)continue;
+ if(search&&![r.request_no,r.material_name,r.specification,r.supplier_department].some(v=>String(v||'').toLowerCase().includes(search)))continue;
+ n++;const card=document.createElement('article');card.className='card';
+ const head=document.createElement('h3');head.textContent=r.request_no+' · '+r.material_name+' ['+r.status+']';
+ const desc=document.createElement('p');desc.textContent='규격 '+r.specification+' / 요청 '+r.requested_qty+' '+r.unit+' / 보유 '+r.supplier_department+' / 출고 '+(r.shipped_qty??'미입력')+' / 실제 입고 '+(r.received_qty??'미확정');
+ card.append(head,desc);
+ const own=canonical(profile?.department),admin=profile?.role==='admin';
+ if((admin||own===r.supplier_department)&&MODE==='supplier'&&r.status==='대기'){
+  const btn=document.createElement('button');btn.textContent='요청 확인';btn.onclick=()=>transition(r,'확인');card.append(btn)
+ }
+ if((admin||own===r.supplier_department)&&MODE==='supplier'&&r.status==='확인'){
+  const wrap=document.createElement('div');wrap.className='actions';const qty=document.createElement('input');qty.type='number';qty.min='0.001';qty.step='0.001';qty.placeholder='실제 출고량';qty.value=r.requested_qty;qty.setAttribute('aria-label','실제 출고량');
+  const btn=document.createElement('button');btn.textContent='출고 기록';btn.onclick=()=>transition(r,'출고',qty.value);wrap.append(qty,btn);card.append(wrap)
+ }
+ if((admin||own==='가공부')&&MODE==='receive'&&r.status==='출고'){
+  const wrap=document.createElement('div');wrap.className='actions',qty=document.createElement('input');qty.type='number';qty.min='0.001';qty.step='0.001';qty.value=r.shipped_qty??r.requested_qty;qty.setAttribute('aria-label','실제 입고량');
+  const btn=document.createElement('button');btn.textContent='실제 입고 확인 및 완료';btn.onclick=()=>transition(r,'입고완료',qty.value);wrap.append(qty,btn);card.append(wrap)
+ }
+ $('records').append(card)
+ }
+ if(!n)$('records').textContent='조회 가능한 요청이 없습니다.';
+ status('서버 '+data.length+'건 중 '+n+'건 표시 · '+new Date().toLocaleTimeString('ko-KR'));
+}
+async function refresh(){
+ if(!sb||!profile||busy)return;busy=true;
+ try{let q=sb.from('jinil_material_requests').select('*').order('created_at',{ascending:false}).limit(1000);
+ if(MODE==='supplier')q=q.eq('supplier_department',DEPT);
+ const r=await q;if(r.error)throw r.error;data=r.data||[];draw()
+ }catch(e){status('조회 오류: '+e.message)}finally{busy=false}
+}
+async function transition(row,next,qty){
+ if(busy)return;
+ const patch={status:next};if(next==='출고'||next==='입고완료'){
+ const amount=Number(qty);if(!Number.isFinite(amount)||amount<=0)return status('실제 수량을 양수로 입력하세요.');
+ patch[next==='출고'?'shipped_qty':'received_qty']=amount;
+ }
+ busy=true;
+ try{const r=await sb.from('jinil_material_requests').update(patch).eq('id',row.id).eq('status',row.status).select('id,status');
+ if(r.error)throw r.error;if(r.data.length!==1)throw Error('다른 기기에서 상태가 변경됐습니다. 새로고침하세요.');
+ status(row.request_no+' 서버 상태 전환 완료: '+next)
+ }catch(e){status('처리 실패: '+e.message)}finally{busy=false;await refresh()}
+}
+$('login').onclick=async()=>{
+ try{const url=$('url').value.trim(),key=$('key').value.trim();if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(url)||!key)throw Error('Supabase 프로젝트 URL과 공개용 키를 확인하세요.');
+ const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');if(channel&&sb)await sb.removeChannel(channel);sb=createClient(url,key);
+ let {data:{user}}=await sb.auth.getUser();if(!user){const r=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(r.error)throw r.error;user=r.data.user}
+ if(!user)throw Error('로그인 실패');
+ const p=await sb.from('profiles').select('department,role').eq('id',user.id).single();if(p.error)throw p.error;profile=p.data;
+ if(!allowed()){profile=null;throw Error('해당 부서 기능 접근 권한이 없습니다.')}
+ $('identity').textContent=profile.department+' / '+profile.role;$('workspace').hidden=false;
+ if(MODE==='request')$('requestSection').hidden=false;
+ localStorage.setItem('jinil_config',JSON.stringify({url,key}));await refresh();
+ channel=sb.channel('jinil-mat-'+DEPT+'-'+ID()).on('postgres_changes',{event:'*',schema:'public',table:'jinil_material_requests'},refresh).subscribe();
+ }catch(e){status('연결 오류: '+e.message)}
+};
+if(MODE==='request')$('newRequest').onsubmit=async e=>{
+ e.preventDefault();if(busy||!allowed())return;const form=new FormData(e.target);
+ const payload=Object.fromEntries(form.entries());payload.requested_qty=Number(payload.requested_qty);
+ if(!(payload.requested_qty>0))return status('요청량은 양수여야 합니다.');
+ busy=true;try{const r=await sb.from('jinil_material_requests').insert(payload);if(r.error)throw r.error;
+ e.target.reset();e.target.elements.request_no.value='MAT-'+new Date().toISOString().slice(0,10)+'-'+ID();status('서버 요청 등록 완료.')
+ }catch(err){status('요청 실패: '+err.message)}finally{busy=false;await refresh()}
+};
+$('refresh').onclick=refresh;
+$('logout').onclick=async()=>{if(channel&&sb)await sb.removeChannel(channel);if(sb)await sb.auth.signOut();sb=null;profile=null;data=[];$('workspace').hidden=true;if(MODE==='request')$('requestSection').hidden=true;$('identity').textContent='로그아웃';status('로그아웃했습니다.')};
+$('search').oninput=draw;$('filter').onchange=draw;
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&profile)refresh()});
+setInterval(()=>{if(profile)refresh()},60000);
+</script></main></body></html>
