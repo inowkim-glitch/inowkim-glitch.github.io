@@ -4,7 +4,7 @@ import {createOrder,sendOrder,loadDepartmentQueue,transitionOrder,watchDepartmen
 const CLIENT_URL='https://esm.sh/@supabase/supabase-js@2';
 // 앱 공통 연결 설정. 각 기기에서 직접 연결 후 서버 공유 데이터를 읽습니다.
 const $=(id)=>document.getElementById(id);
-let sb=null,profile=null,order=null,unsubscribe=null,inFlight=false;
+let sb=null,profile=null,order=null,unsubscribe=null,inFlight=false,monitorDepartment=null;
 const info=t=>{$('result').textContent=t;};
 function block(id,v){const el=$(id);if(el)el.disabled=v;}
 async function requireLogin(){
@@ -21,7 +21,7 @@ async function init(){
  $('send').onclick=send;
  $('reload').onclick=refresh;
  $('department').onchange=()=>{subscribeToSelectedDepartment();refresh();};
- $('logout').onclick=async()=>{unsubscribe?.();await sb?.auth?.signOut();profile=null;display();info('로그아웃했습니다.')};
+ $('logout').onclick=async()=>{unsubscribe?.();await sb?.auth?.signOut();profile=null;monitorDepartment=null;display();info('로그아웃했습니다.')};
  if(conf.url&&conf.key)await prepareClient(conf);
  setInterval(()=>{if(profile)refresh()},60000);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&profile)refresh()});
@@ -46,7 +46,19 @@ async function connect(){
 async function authorize(user){
  const {data,error}=await sb.from('profiles').select('department,role').eq('id',user.id).single();
  if(error||!data)throw Error('회원 프로필을 찾을 수 없습니다: '+(error?.message||''));
- profile=data;display();await refresh();
+ profile=data;monitorDepartment=null;
+ if(profile.role==='admin'){
+  const route=decodeURIComponent(location.pathname);
+  const start=route.indexOf('부서/');
+  if(start<0)throw Error('관리자 블록 경로를 확인할 수 없습니다.');
+  const key=route.slice(start),allowed=await sb.from('jinil_block_access').select('block_key').eq('user_id',user.id).eq('block_key',key).maybeSingle();
+  if(allowed.error)throw allowed.error;
+  if(!allowed.data)throw Error('슈퍼관리자가 이 블록의 조회 권한을 부여하지 않았습니다.');
+  const m=key.match(/^부서\/([^/]+)\//);
+  if(!m)throw Error('관리자 부서 경로 오류');
+  monitorDepartment=m[1];
+ }
+ display();await refresh();
  unsubscribe?.();
  subscribeToSelectedDepartment();
 }
@@ -55,23 +67,25 @@ function subscribeToSelectedDepartment(){
  unsubscribe?.();
  const mine=canonicalDepartment(profile.department);
  const viewing=$('department').value;
- if(mine!=='총무부'&&profile.role!=='admin'&&profile.role!=='supervisor'&&mine!==viewing)return;
+ if(profile.role==='admin'&&monitorDepartment!==viewing)return;
+ if(mine!=='총무부'&&profile.role!=='admin'&&profile.role!=='super_admin'&&mine!==viewing)return;
  unsubscribe=watchDepartmentQueue(sb,{department:viewing,onChange:refresh});
 }
 function display(){
  const allowed=!!profile;
  $('editor').hidden=!allowed;
  $('who').textContent=allowed?'소속 '+profile.department+' | 권한 '+profile.role:'로그인 전';
- const isAdmin=['admin','supervisor'].includes(profile?.role),isGeneral=canonicalDepartment(profile?.department)==='총무부';
- block('create',!allowed||(!isAdmin&&!isGeneral));
- block('send',!order||(!isAdmin&&!isGeneral));
+ const isSuper=profile?.role==='super_admin',isGeneral=profile?.role==='staff'&&canonicalDepartment(profile?.department)==='총무부';
+ block('create',!allowed||(!isSuper&&!isGeneral));
+ block('send',!order||(!isSuper&&!isGeneral);
  block('reload',!allowed);
  const mine=canonicalDepartment(profile?.department);
- if(['생산부','테프론부','가공부'].includes(mine) && !isAdmin){$('department').value=mine; $('department').disabled=true;}
+ if(profile?.role==='admin'&&monitorDepartment){$('department').value=monitorDepartment;$('department').disabled=true;}
+ else if(['생산부','테프론부','가공부'].includes(mine) && !isSuper){$('department').value=mine; $('department').disabled=true;}
  else $('department').disabled=false;
 }
 async function create(){
- if(inFlight)return;inFlight=true;block('create',true);
+ if(inFlight||!(profile?.role==='super_admin'||(profile?.role==='staff'&&canonicalDepartment(profile?.department)==='총무부')))return info('발주 작성 권한이 없습니다.');inFlight=true;block('create',true);
  try{
   const payload={company:$('company').value.trim(),item:$('item').value.trim(),quantity:$('quantity').value.trim(),source:'V72 modular integration'};
   if(!payload.company||!payload.item)throw Error('업체명과 품목을 입력하세요.');
@@ -80,7 +94,7 @@ async function create(){
  }catch(e){info('저장 오류: '+e.message)}finally{inFlight=false;display()}
 }
 async function send(){
- if(inFlight||!order)return;
+ if(inFlight||!order||!(profile?.role==='super_admin'||(profile?.role==='staff'&&canonicalDepartment(profile?.department)==='총무부')))return info('발주 전송 권한이 없습니다.');
  const recipients=[...document.querySelectorAll('input[name="recipient"]:checked')].map(x=>x.value);
  if(!recipients.length){info('수신 부서를 선택하세요.');return;}
  inFlight=true;block('send',true);
@@ -96,7 +110,8 @@ async function refresh(){
  try{
   const department=$('department').value;
   const mine=canonicalDepartment(profile.department);
-  if(!['admin','supervisor'].includes(profile.role)&&mine!=='총무부'&&mine!==department)throw Error('다른 부서 조회 권한이 없습니다.');
+  if(profile.role==='admin'&&department!==monitorDepartment)throw Error('이 블록에 부여되지 않은 부서입니다.');
+  if(!['admin','super_admin'].includes(profile.role)&&mine!=='총무부'&&mine!==department)throw Error('다른 부서 조회 권한이 없습니다.');
   const list=await loadDepartmentQueue(sb,{department});
   $('records').replaceChildren();
   if(!list.length)$('records').textContent='조회 가능한 발주가 없습니다.';
@@ -106,7 +121,7 @@ async function refresh(){
    header.textContent=[item.order_summary?.order_no||item.order_id,item.order_summary?.company||'',item.status].join(' / ');
    box.append(header);
    const buttonText=item.status==='대기'?'확인':item.status==='확인'?'완료':null;
-   if(buttonText && (['admin','supervisor'].includes(profile.role)||mine===department)){
+   if(buttonText && (profile.role==='super_admin'||(profile.role==='staff'&&mine===department))){
     const btn=document.createElement('button');btn.textContent=buttonText;btn.onclick=async()=>{
      btn.disabled=true;
      try{await transitionOrder(sb,{dispatchId:item.id,expectedStatus:item.status,nextStatus:buttonText});await refresh();info('처리 성공: '+buttonText)}
