@@ -1538,7 +1538,7 @@ html,body{overscroll-behavior-y:auto!important}
 <p id="jinil-live-msg" role="status"></p>
 <div class="note">⚠ V72 원본 내부의 발주·재고 기능은 아직 로컬 시험 데이터가 남아 있습니다. 실제 업무 데이터를 등록하지 마세요. 운영 배포용이 아닙니다.</div>
 </div></div>
-<div id="jinil-test-viewer" hidden role="dialog" aria-modal="true" aria-label="슈퍼관리자 블록 테스트">
+<dialog id="jinil-super-pin-modal" style="width:min(460px,93vw);padding:24px;border:1px solid #b5cbbc;border-radius:16px;box-shadow:0 20px 70px #12382045"><form id="jinil-super-pin-form"><h2 id="jinil-super-pin-title" style="margin:0 0 12px;color:#1c4d35">슈퍼관리자 PIN</h2><p id="jinil-super-pin-description" style="font-size:13px"></p><label id="jinil-super-pin-current-label" style="display:block;margin:12px 0">현재 PIN<input id="jinil-super-pin-current" type="password" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="off" style="display:block;width:100%;padding:10px"></label><label id="jinil-super-pin-next-label" style="display:block;margin:12px 0" hidden>새 PIN<input id="jinil-super-pin-next" type="password" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="off" style="display:block;width:100%;padding:10px"></label><label id="jinil-super-pin-confirm-label" style="display:block;margin:12px 0" hidden>새 PIN 확인<input id="jinil-super-pin-confirm" type="password" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="off" style="display:block;width:100%;padding:10px"></label><p id="jinil-super-pin-msg" role="status" style="font-size:12px;color:#a33a30"></p><div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" id="jinil-super-pin-cancel" style="padding:9px 15px">취소</button><button type="submit" style="padding:9px 15px;background:#1c6b42;color:#fff;border:0;border-radius:8px">확인</button></div></form></dialog><div id="jinil-test-viewer" hidden role="dialog" aria-modal="true" aria-label="슈퍼관리자 블록 테스트">
 <div class="jinil-test-panel"><div class="jinil-test-toolbar"><b id="jinil-test-heading">테스트 미리보기</b>
 <button id="jinil-test-close" type="button">테스트 닫기</button></div>
 <p style="font-size:12px;margin:0;color:#805c26">테스트 전용입니다. 운영 배포는 진행되지 않습니다. 신뢰할 수 있는 HTML만 실행하세요.</p>
@@ -1559,7 +1559,7 @@ html,body{overscroll-behavior-y:auto!important}
 <p style="font-size:13px;margin:0 0 10px">부서 블록 26개 및 기타블록 3개(CAD 3D·메모·캡처): HTML 등록 → 테스트 → 승인 → 배포 대상 지정 → 이전 버전 복구</p>
 <a id="jinil-open-update-center" href="./super_admin_updates.html" target="_blank" rel="noopener" style="display:inline-block;background:#20543a;color:white;padding:10px 15px;border-radius:8px;text-decoration:none;font-weight:700">슈퍼관리자 업데이트 센터 열기</a>
 <p style="font-size:12px;color:#806330;margin:10px 0 0">주의: 별도 업데이트 센터는 Supabase 버전 포인터를 관리합니다. V72 원본 메인 블록과의 자동 연결은 아직 통합·검증되지 않았습니다.</p>
-</section><div class="admin-toolbar"><h2>메인 블록 관리</h2><button class="btn primary" id="adminAddMain" type="button">+ 메인 블록 추가</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>블록 이름</th><th>종류</th><th>배치 위치</th><th>관리</th></tr></thead><tbody id="adminMainRows"></tbody></table></div><div class="admin-toolbar"><h2>블록 종류 관리</h2><button class="btn primary" id="adminAddType" type="button">+ 종류 추가</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>종류 이름</th><th>구분</th><th>관리</th></tr></thead><tbody id="adminTypeRows"></tbody></table></div><section class="admin-config"><h3>회원 계정 관리</h3><p style="color:#b42318;font-size:12px">긴급 복구는 관리자 승인 후 8자리 임시 비밀번호로 진행하는 로컬 테스트 기능입니다. 실제 운영에는 추가 본인 인증이 필요합니다. 승인 후 10시간 또는 비밀번호 변경 시 즉시 종료됩니다. 실제 이메일 발송은 서버 연동 전에는 지원되지 않습니다.</p><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>이메일</th><th>권한 / 복구 상태</th><th>관리</th></tr></thead><tbody id="adminMemberRows"></tbody></table></div></section><section class="admin-config"><h3>Supabase 연결 설정</h3><p>URL과 공개용 KEY는 이 브라우저에 저장되어 다음 로그인과 업데이트 센터에서 자동 사용됩니다.</p><button class="btn primary" id="openSupabaseSettings" type="button">⚙ Supabase 연결 설정 변경</button><p id="supabaseConfigStatus" style="font-size:12px;color:#486c56"></p></section><dialog id="supabaseSettingsModal"><div class="modal" style="max-width:540px"><h2>Supabase 연결 설정</h2><p>슈퍼관리자 전용입니다. 공개용 anon / publishable KEY만 저장하세요. <b>service_role·secret 키는 금지</b>입니다.</p><label for="supabaseUrl">Supabase URL</label><div class="admin-field-row"><input class="control" id="supabaseUrl" type="password" autocomplete="off"><button class="btn" type="button" id="showSupabaseUrl">표시</button></div><label for="supabaseKey">Supabase 공개용 KEY</label><div class="admin-field-row"><input class="control" id="supabaseKey" type="password" autocomplete="off"><button class="btn" type="button" id="showSupabaseKey">표시</button></div><div class="actions"><button class="btn" id="closeSupabaseSettings" type="button">취소</button><button class="btn primary" id="saveSupabase" type="button">연결 정보 저장</button></div><p style="font-size:12px;color:#637464">이 기기와 같은 웹 주소에서만 설정이 유지됩니다. 다른 기기에는 별도 저장이 필요합니다. 저장 후 다음 로그인에 적용됩니다.</p></div></dialog><section class="admin-config"><h3>푸시 알림 관리</h3><p>향후 inowkim-glitch.github.io의 푸시 기능과 연결할 관리자 전용 설정 화면입니다. 현재 발송 기능은 연결 전입니다.</p><label for="pushAudience">알림 대상</label><select id="pushAudience"><option value="all">전체 회원</option></select><label for="pushTitle">알림 제목</label><input id="pushTitle" placeholder="알림 제목"><label for="pushBody">알림 내용</label><textarea id="pushBody" rows="3" placeholder="전달할 내용을 입력하세요"></textarea><button class="btn" type="button" id="pushPreview">발송 전 미리보기</button><button class="btn" type="button" disabled title="서버 연동 후 사용">푸시 발송 (연동 대기)</button><p>발송 내역과 기기 등록 현황은 서버 연동 후 표시됩니다.</p></section><div class="admin-toolbar"><h2>관리자 설정</h2><button class="btn" id="adminChangePassword" type="button">비밀번호 변경</button></div></div></section><section class="detail-screen" id="detail"><div class="detail-top"><button class="back" id="back">← 메인으로 돌아가기</button><span id="detailBreadcrumb"></span></div><div class="detail-grid"><section class="workspace detail-workspace"><div class="section-head"><div class="workspace-heading"><h1 class="section-title" id="detailName">메인 블록 배치 공간</h1><span class="eyebrow">WORKSPACE</span></div><span class="count" id="detailCount">업무 기능 페이지</span></div><div class="detail-canvas" id="detailCanvas"><div class="detail-placeholder">준비중</div></div></section><aside class="sidebar detail-sidebar"><div class="eyebrow">BLOCK LIBRARY</div><h2 class="side-title">블록 목록</h2><p class="side-hint">업무 기능을 선택하세요. 해당 기능을 이 공간에서 실행합니다.</p><div id="detailSourceList" class="side-list"></div><button class="add" id="detailAddBtn" type="button">＋ 새로운 블록 추가</button><p class="footnote">기능 화면은 순차적으로 추가됩니다.</p></aside></div></section>
+</section><div class="admin-toolbar"><h2>메인 블록 관리</h2><button class="btn primary" id="adminAddMain" type="button">+ 메인 블록 추가</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>블록 이름</th><th>종류</th><th>배치 위치</th><th>관리</th></tr></thead><tbody id="adminMainRows"></tbody></table></div><div class="admin-toolbar"><h2>블록 종류 관리</h2><button class="btn primary" id="adminAddType" type="button">+ 종류 추가</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>종류 이름</th><th>구분</th><th>관리</th></tr></thead><tbody id="adminTypeRows"></tbody></table></div><section class="admin-config"><h3>회원 계정 관리</h3><p style="color:#b42318;font-size:12px">긴급 복구는 관리자 승인 후 8자리 임시 비밀번호로 진행하는 로컬 테스트 기능입니다. 실제 운영에는 추가 본인 인증이 필요합니다. 승인 후 10시간 또는 비밀번호 변경 시 즉시 종료됩니다. 실제 이메일 발송은 서버 연동 전에는 지원되지 않습니다.</p><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>이메일</th><th>권한 / 복구 상태</th><th>관리</th></tr></thead><tbody id="adminMemberRows"></tbody></table></div></section><section class="admin-config"><h3>Supabase 연결 설정</h3><p>URL과 공개용 KEY는 이 브라우저에 저장되어 다음 로그인과 업데이트 센터에서 자동 사용됩니다.</p><button class="btn primary" id="openSupabaseSettings" type="button">⚙ Supabase 연결 설정 변경</button><p id="supabaseConfigStatus" style="font-size:12px;color:#486c56"></p></section><dialog id="supabaseSettingsModal"><div class="modal" style="max-width:540px"><h2>Supabase 연결 설정</h2><p>슈퍼관리자 전용입니다. 공개용 anon / publishable KEY만 저장하세요. <b>service_role·secret 키는 금지</b>입니다.</p><label for="supabaseUrl">Supabase URL</label><div class="admin-field-row"><input class="control" id="supabaseUrl" type="password" autocomplete="off"><button class="btn" type="button" id="showSupabaseUrl">표시</button></div><label for="supabaseKey">Supabase 공개용 KEY</label><div class="admin-field-row"><input class="control" id="supabaseKey" type="password" autocomplete="off"><button class="btn" type="button" id="showSupabaseKey">표시</button></div><div class="actions"><button class="btn" id="closeSupabaseSettings" type="button">취소</button><button class="btn primary" id="saveSupabase" type="button">연결 정보 저장</button></div><p style="font-size:12px;color:#637464">이 기기와 같은 웹 주소에서만 설정이 유지됩니다. 다른 기기에는 별도 저장이 필요합니다. 저장 후 다음 로그인에 적용됩니다.</p></div></dialog><section class="admin-config"><h3>푸시 알림 관리</h3><p>향후 inowkim-glitch.github.io의 푸시 기능과 연결할 관리자 전용 설정 화면입니다. 현재 발송 기능은 연결 전입니다.</p><label for="pushAudience">알림 대상</label><select id="pushAudience"><option value="all">전체 회원</option></select><label for="pushTitle">알림 제목</label><input id="pushTitle" placeholder="알림 제목"><label for="pushBody">알림 내용</label><textarea id="pushBody" rows="3" placeholder="전달할 내용을 입력하세요"></textarea><button class="btn" type="button" id="pushPreview">발송 전 미리보기</button><button class="btn" type="button" disabled title="서버 연동 후 사용">푸시 발송 (연동 대기)</button><p>발송 내역과 기기 등록 현황은 서버 연동 후 표시됩니다.</p></section><div class="admin-toolbar"><h2>관리자 설정</h2><button class="btn" id="adminChangePassword" type="button">슈퍼관리자 6자리 PIN 등록·변경</button></div><p style="font-size:12px;color:#6d756f;margin:4px 0">관리자 모드 진입용 추가 확인 PIN입니다. Supabase 계정 비밀번호는 변경하지 않습니다.</p></div></section><section class="detail-screen" id="detail"><div class="detail-top"><button class="back" id="back">← 메인으로 돌아가기</button><span id="detailBreadcrumb"></span></div><div class="detail-grid"><section class="workspace detail-workspace"><div class="section-head"><div class="workspace-heading"><h1 class="section-title" id="detailName">메인 블록 배치 공간</h1><span class="eyebrow">WORKSPACE</span></div><span class="count" id="detailCount">업무 기능 페이지</span></div><div class="detail-canvas" id="detailCanvas"><div class="detail-placeholder">준비중</div></div></section><aside class="sidebar detail-sidebar"><div class="eyebrow">BLOCK LIBRARY</div><h2 class="side-title">블록 목록</h2><p class="side-hint">업무 기능을 선택하세요. 해당 기능을 이 공간에서 실행합니다.</p><div id="detailSourceList" class="side-list"></div><button class="add" id="detailAddBtn" type="button">＋ 새로운 블록 추가</button><p class="footnote">기능 화면은 순차적으로 추가됩니다.</p></aside></div></section>
 </div>
 <dialog id="editor"><form class="modal" id="editForm"><h2 id="modalTitle">새로운 블럭 추가</h2><p>블록 종류를 선택하고 이름을 입력하세요.</p><div class="type-heading"><label class="field" for="blockType">블록 종류</label><button type="button" id="addType" class="type-plus" title="관리자: 블록 종류 추가">＋</button></div><select class="control" id="blockType" required></select><p id="typeLockedHint" class="type-locked-hint" hidden>생성된 블록은 종류를 변경할 수 없습니다. 이름만 수정할 수 있습니다.</p><label class="field" for="blockName">블록 이름</label><input class="control" id="blockName" maxlength="35" placeholder="예: 발주 현황" required autocomplete="off"><div class="actions"><button type="button" class="btn" id="cancel">취소</button><button class="btn primary" type="submit" id="saveBtn">추가하기</button></div></form></dialog>
 <dialog id="colorDialog"><div class="modal">
@@ -1976,7 +1976,50 @@ function openEditor(id=null){if(!isAdminUser())return;
  $('blockName').value=b?.name||'';$('editor').showModal();$('blockName').focus()
 }
 $('addBtn').hidden=false;$('addBtn').onclick=()=>requestAdmin('main');$('cancel').onclick=()=>$('editor').close();
-function requestAdmin(purpose){if(!isAdminUser()){toast('관리자 계정으로 로그인해야 합니다.');return}adminAuthorized=true;adminPurpose=purpose;if(purpose==='page'){showAdmin();return}if(purpose==='main'){openEditor();return}if(purpose==='detail'){openDetailEditor();return}openTypeDialog()}
+
+/* Superadmin local convenience PIN: NOT a replacement for Supabase authentication/RLS. */
+const SUPER_PIN_PREFIX='jinil-superadmin-pin-v2:';
+let superPinUnlocked=false,superPinFailures=0,superPinLockUntil=0,superPinMode='verify';
+const pinEl=id=>document.getElementById('jinil-super-pin-'+id);
+const pinRecord=()=>{try{return JSON.parse(localStorage.getItem(SUPER_PIN_PREFIX+String(loggedEmail).toLowerCase())||'null')}catch{return null}};
+const pinHex=a=>Array.from(a,x=>x.toString(16).padStart(2,'0')).join('');
+async function pinHash(pin,salt){return pinHex(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+':'+pin))))}
+async function pinValid(pin){const r=pinRecord();return !!(r?.salt&&r?.hash&&await pinHash(pin,r.salt)===r.hash)}
+function showPinModal(mode){
+ if(!isAdminUser()||!document.body.classList.contains('jinil-live-authorized'))return toast('슈퍼관리자 로그인 후 이용하세요.');
+ superPinMode=mode;
+ const change=mode==='change',setup=change&&!pinRecord();
+ pinEl('title').textContent=change?'슈퍼관리자 PIN 등록·변경':'관리자 모드 진입 확인';
+ pinEl('description').textContent=change?'숫자 6자리를 등록하세요. 이미 PIN을 등록했다면 현재 PIN도 입력하세요.':'등록된 숫자 6자리를 입력하세요.';
+ for(const field of ['current','next','confirm'])pinEl(field).value='';
+ pinEl('current-label').hidden=setup;
+ pinEl('next-label').hidden=!change;
+ pinEl('confirm-label').hidden=!change;
+ pinEl('current').required=!setup;
+ pinEl('next').required=change;pinEl('confirm').required=change;
+ pinEl('msg').textContent='';
+ pinEl('modal').showModal();
+ (setup?pinEl('next'):pinEl('current')).focus();
+}
+pinEl('cancel').onclick=()=>pinEl('modal').close();
+pinEl('form').onsubmit=async e=>{
+ e.preventDefault();
+ const msg=pinEl('msg');
+ if(Date.now()<superPinLockUntil){msg.textContent='시도가 반복되어 잠시 대기해 주세요.';return}
+ const current=pinEl('current').value.trim(),valid=x=>/^[0-9]{6}$/.test(x);
+ if(superPinMode==='verify'){
+  if(!valid(current)||!await pinValid(current)){superPinFailures++;if(superPinFailures>=5)superPinLockUntil=Date.now()+30000;msg.textContent='6자리 PIN이 올바르지 않습니다.';return}
+  superPinFailures=0;superPinUnlocked=true;pinEl('modal').close();adminAuthorized=true;adminPurpose='page';showAdmin();return;
+ }
+ const next=pinEl('next').value,confirm=pinEl('confirm').value;
+ if(!valid(next)||next!==confirm){msg.textContent='새 PIN 숫자 6자리를 동일하게 입력하세요.';return}
+ if(pinRecord()&&(!valid(current)||!await pinValid(current))){msg.textContent='기존 PIN이 올바르지 않습니다.';return}
+ const salt=pinHex(crypto.getRandomValues(new Uint8Array(16)));
+ try{localStorage.setItem(SUPER_PIN_PREFIX+String(loggedEmail).toLowerCase(),JSON.stringify({salt,hash:await pinHash(next,salt)}))}
+ catch(error){msg.textContent='저장 실패: '+error.message;return}
+ superPinUnlocked=true;superPinFailures=0;pinEl('modal').close();toast('슈퍼관리자 PIN 등록 완료');
+};
+function requestAdmin(purpose){if(!isAdminUser()){toast('관리자 계정으로 로그인해야 합니다.');return}if(purpose==='page'&&pinRecord()&&!superPinUnlocked){showPinModal('verify');return}adminAuthorized=true;adminPurpose=purpose;if(purpose==='page'){showAdmin();return}if(purpose==='main'){openEditor();return}if(purpose==='detail'){openDetailEditor();return}openTypeDialog()}
 $('addType').onclick=()=>requestAdmin('type');
 $('detailAddBtn').hidden=true;
 $('adminCancel').onclick=()=>$('adminDialog').close();
@@ -3064,11 +3107,11 @@ function adminBtn(label,fn){const b=el('button','btn',label);b.type='button';b.o
 function adminCell(row,value){const td=el('td','',value);row.append(td);return td}
 function adminRow(tbody,values,buttons){const tr=el('tr');values.forEach(x=>adminCell(tr,x));const cell=adminCell(tr,'');buttons.forEach(([label,fn])=>cell.append(adminBtn(label,fn)));tbody.append(tr)}
 function showAdmin(){clearDetailConnection();$('detail').classList.remove('active');$('dashboard').style.display='none';$('adminScreen').hidden=false;renderAdmin();window.scrollTo(0,0)}
-function closeAdmin(){$('adminScreen').hidden=true;adminAuthorized=false;$('dashboard').style.display='grid';render()}
+function closeAdmin(){$('adminScreen').hidden=true;adminAuthorized=false;superPinUnlocked=false;$('dashboard').style.display='grid';render()}
 $('adminEntry').onclick=()=>requestAdmin('page');$('adminBack').onclick=closeAdmin;
 $('adminAddMain').onclick=()=>openEditor();
 $('adminAddType').onclick=openTypeDialog;
-$('adminChangePassword').onclick=()=>toast('고정 관리자 비밀번호 변경은 서버 인증 연동 후 지원합니다.');
+$('adminChangePassword').onclick=()=>showPinModal('change');
 function deleteMain(id){const b=state.blocks.find(x=>x.id===id);if(!b||!confirm(`“${b.name}” 블록을 목록과 모든 메인 배치에서 삭제하시겠습니까?`))return;state.blocks=state.blocks.filter(x=>x.id!==id);layout.pages.forEach(p=>['left','right'].forEach(side=>{const z=p[side];z.items=z.items.filter(x=>x.blockId!==id);if(z.lower)z.lower.items=z.lower.items.filter(x=>x.blockId!==id)}));save();render();renderAdmin()}
 function deleteDetail(parent,id){const entries=detailCustom[parent]||[];const entry=entries.find(x=>x.id===id);if(!entry||!confirm(`“${entry.name}” 내부 블록을 삭제하시겠습니까?`))return;detailCustom[parent]=entries.filter(x=>x.id!==id);detailSave();renderAdmin()}
 function renameDetail(parent,id){const entry=(detailCustom[parent]||[]).find(x=>x.id===id);if(!entry)return;const next=prompt('블록 이름 수정',entry.name);if(next===null||!next.trim())return;entry.name=next.trim();detailSave();renderAdmin()}
@@ -3365,6 +3408,7 @@ function jinilWheelHtml(html){
   const u=result.data.user;
   const p=await liveClient.from('profiles').select('role,department').eq('id',u.id).single();
   if(p.error||!p.data)throw Error('등록된 회원 권한을 확인할 수 없습니다.');
+  superPinUnlocked=false;
   jinilLiveRole=String(p.data.role||'').trim();
   jinilLiveDepartment=normalize(p.data.department);
   loggedEmail=u.email||'';
@@ -3400,6 +3444,7 @@ function jinilWheelHtml(html){
   label.style.cssText='font-size:12px;color:#8b5200;background:#fff1cc;padding:7px 10px;border-radius:8px';
   header?.append(label);
   LIVE_ID('logoutBtn').onclick=async()=>{
+   superPinUnlocked=false;
    await liveClient.auth.signOut();
    jinilLiveRole='';jinilLiveDepartment='';loggedEmail='';
    clearTestBlocks();releasedItems.replaceChildren();releasedPanel.hidden=true;
