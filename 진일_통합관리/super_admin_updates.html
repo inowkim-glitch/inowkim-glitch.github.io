@@ -8,33 +8,76 @@
 <main>
 <section><p class="warn"><b>운영 주의</b> 이 화면은 V72 작업용 업데이트 관리 기능입니다. '배포 대상 지정'은 Supabase의 버전 포인터를 변경합니다. 기존 29개 HTML 파일이나 GitHub Pages 운영 화면을 직접 교체하지 않습니다. 실제 배포 자동화는 별도 연결·검증 후 사용해야 합니다.</p><p class="muted">HTML 미리보기는 격리된 iframe에서 실행됩니다. 외부 네트워크를 사용하는 코드가 포함될 수 있으므로 신뢰할 수 있는 파일만 올리세요.</p></section>
 <section><h2>1. 로그인 및 슈퍼관리자 권한 확인</h2><div class="row"><div><label>Supabase URL</label><input id="url" placeholder="https://프로젝트.supabase.co"></div><div><label>공개용 키 (service_role 금지)</label><input id="key" type="password"></div><div><label>이메일</label><input id="email" autocomplete="username" type="email"></div><div><label>비밀번호</label><input id="pass" type="password" autocomplete="current-password"></div></div><button id="login">로그인 및 확인</button><button id="logout" disabled>로그아웃</button><p id="status" role="status">로그인이 필요합니다.</p></section>
-<div id="panel"><section><h2>2. HTML 파일 불러오기 및 버전 등록</h2><label>업데이트할 블록 선택 (29개)</label><select id="block"></select><label>등록할 HTML 파일</label><input id="file" type="file" accept=".html,text/html"><p class="muted">파일 최대 750KB. 동일 블록은 최신 3개 버전을 보관합니다. 4번째 등록 시 가장 오래된 비운영 버전을 정리하고, 현재 운영 버전이 가장 오래된 경우 등록을 안전하게 차단합니다. 기존 운영 HTML 파일은 자동 덮어쓰지 않습니다.</p><button id="stage">새 버전 등록</button></section>
-<section><h2>3. 불러온 버전 확인·테스트·배포 대상 지정·복구</h2><button id="refresh">버전 목록 새로고침</button><div id="versions"></div><p class="muted">미리보기 후 '테스트 통과'를 선택하면 배포 대상으로 지정할 수 있습니다. 이전에 테스트를 통과한 버전을 다시 지정하면 복구 포인터로 활용할 수 있습니다.</p><iframe id="preview" sandbox="allow-scripts" referrerpolicy="no-referrer" title="격리된 HTML 테스트 화면"></iframe></section></div>
+<div id="panel">
+<section><h2>2. 기타블록 폴더 등록</h2>
+<p class="muted">이름을 등록하면 기타블록에 새 경로가 만들어지고, 슈퍼관리자 메인 목록에 흐릿하게 표시됩니다. HTML을 넣기 전에는 테스트 대기 상태입니다.</p>
+<label>새 기타블록 이름</label><input id="otherName" maxlength="48" placeholder="예: 작업일지">
+<button id="createOther" type="button">기타블록 폴더 등록</button>
+<p id="otherStatus" class="muted" role="status"></p>
+<p class="warn">이 화면의 폴더 등록은 Supabase 블록 등록부에 경로를 생성하는 기능입니다. GitHub 개발 브랜치에 실제 폴더 및 HTML 파일을 생성하려면 별도의 GitHub 연동 또는 ChatGPT를 통한 반영이 필요합니다.</p>
+</section>
+<section><h2>3. HTML 파일 불러오기 및 버전 등록</h2><label>업데이트할 블록 선택 (29개)</label><select id="block"></select><label>등록할 HTML 파일</label><input id="file" type="file" accept=".html,text/html"><p class="muted">파일 최대 750KB. 동일 블록은 최신 3개 버전을 보관합니다. 4번째 등록 시 가장 오래된 비운영 버전을 정리하고, 현재 운영 버전이 가장 오래된 경우 등록을 안전하게 차단합니다. 기존 운영 HTML 파일은 자동 덮어쓰지 않습니다.</p><button id="stage">새 버전 등록</button></section>
+<section><h2>4. 불러온 버전 확인·테스트·배포 대상 지정·복구</h2><button id="refresh">버전 목록 새로고침</button><div id="versions"></div><p class="muted">미리보기 후 '테스트 통과'를 선택하면 배포 대상으로 지정할 수 있습니다. 이전에 테스트를 통과한 버전을 다시 지정하면 복구 포인터로 활용할 수 있습니다.</p><iframe id="preview" sandbox="allow-scripts" referrerpolicy="no-referrer" title="격리된 HTML 테스트 화면"></iframe></section></div>
 <p class="muted"><a href="./super_admin_block_access.html">회원별 블록 접근권한 관리</a> · <a href="./index.html">WORKSPACE로 돌아가기</a></p></main>
 <script type="module">
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 const $=x=>document.getElementById(x); let sb=null,user=null,versions=[],releases={};
 const BLOCKS=["부서/총무부/01_발주서작성/01_발주서작성_V1.html","부서/총무부/02_발주목록확인/02_발주목록확인_V1.html","부서/총무부/03_발주목록검색/03_발주목록검색_V1.html","부서/총무부/04_업체목록확인/04_업체목록확인_V1.html","부서/총무부/05_소재등록/05_소재등록_V1.html","부서/총무부/06_생산부재고확인/06_생산부재고확인_V1.html","부서/총무부/07_테프론재고확인/07_테프론재고확인_V1.html","부서/총무부/08_납품예정달력/08_납품예정달력_V1.html","부서/총무부/09_소재발주_확인/09_소재발주_확인_V1.html","부서/테프론부/01_발주목록확인/01_발주목록확인_V1.html","부서/테프론부/02_발주목록검색/02_발주목록검색_V1.html","부서/테프론부/03_재고확인/03_재고확인_V1.html","부서/테프론부/04_생산부재고확인/04_생산부재고확인_V1.html","부서/테프론부/05_테프론재고확인/05_테프론재고확인_V1.html","부서/테프론부/06_납품예정달력/06_납품예정달력_V1.html","부서/테프론부/07_소재발주_확인/07_소재발주_확인_V1.html","부서/가공부/01_소재발주_확인/01_소재발주_확인_V1.html","부서/가공부/02_입고확인/02_입고확인_V1.html","부서/가공부/03_발주목록확인/03_발주목록확인_V1.html","부서/가공부/04_발주목록검색/04_발주목록검색_V1.html","부서/가공부/05_납품예정달력/05_납품예정달력_V1.html","부서/생산부/01_발주목록확인/01_발주목록확인_V1.html","부서/생산부/02_발주목록검색/02_발주목록검색_V1.html","부서/생산부/03_생산부재고확인/03_생산부재고확인_V1.html","부서/생산부/04_납품예정달력/04_납품예정달력_V1.html","부서/생산부/05_소재발주_확인/05_소재발주_확인_V1.html","기타블록/01_CAD3D생성블록/01_CAD3D생성블록_V1.html","기타블록/02_메모블록/02_메모블록_V1.html","기타블록/03_캡처블록/03_캡처블록_V1.html"];
-for(const key of BLOCKS){const option=document.createElement('option');option.value=key;option.textContent=key.replaceAll('/',' › ');$('block').append(option)}
+const ALL_BLOCKS=new Set(BLOCKS);
+function addBlockOption(key,label){
+ if(ALL_BLOCKS.has(key)&&[...$('block').options].some(o=>o.value===key))return;
+ ALL_BLOCKS.add(key);
+ const option=document.createElement('option');option.value=key;option.textContent=label||key.replaceAll('/',' › ');$('block').append(option);
+}
+BLOCKS.forEach(key=>addBlockOption(key));
+async function loadCustom(){
+ const {data,error:e}=await sb.from('jinil_custom_other_blocks').select('block_key,display_name,created_at').order('created_at');
+ if(e)throw e;
+ for(const item of data||[])addBlockOption(item.block_key,'기타블록 › '+item.display_name+' · '+item.block_key);
+ return data||[];
+}
+function folderSlug(value){return String(value).trim().replace(/\\s+/g,'_').replace(/[^가-힣A-Za-z0-9_]/g,'').replace(/_+/g,'_').slice(0,45)}
+function folderPath(index,slug){const n=String(index).padStart(2,'0');return '기타블록/'+n+'_'+slug+'/'+n+'_'+slug+'_V1.html'}
+$('createOther').onclick=async()=>{
+ try{
+  if(!user)throw Error('슈퍼관리자 로그인이 필요합니다.');
+  const raw=$('otherName').value.trim(),slug=folderSlug(raw);
+  if(!raw||!slug)throw Error('기타블록 이름을 입력해 주세요.');
+  const custom=await loadCustom();
+  const exists=custom.find(x=>x.display_name===raw);
+  if(exists)throw Error('이미 등록된 기타블록 이름입니다.');
+  const indices=[1,2,3,...custom.map(x=>Number((x.block_key.split('/')[1]||'').split('_')[0]))].filter(Number.isFinite);
+  let next=Math.max(...indices)+1,key=folderPath(next,slug);
+  if(key.length>180)throw Error('경로 이름이 너무 깁니다.');
+  if(!confirm(raw+' 기타블록 폴더를 등록하시겠습니까?\\n이 단계에서는 실제 배포되지 않습니다.'))return;
+  const {error:e}=await sb.from('jinil_custom_other_blocks').insert({block_key:key,display_name:raw,created_by:user.id});
+  if(e)throw e;
+  addBlockOption(key,'기타블록 › '+raw+' · '+key);
+  $('block').value=key;
+  $('otherStatus').textContent='등록됨: '+key+' (HTML 미등록 · 테스트 대기)';
+  status('새 기타블록 폴더 경로가 등록되었습니다. 메인 목록 새로고침 후 흐릿한 테스트 블록으로 나타납니다.');
+  await refresh();
+ }catch(e){$('otherStatus').textContent='오류: '+e.message}
+};
 function status(s){$('status').textContent=s} function error(e){status('오류: '+(e?.message||String(e)))}
 function show(yes){$('panel').style.display=yes?'block':'none';$('logout').disabled=!yes}
 function safe(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function getBlock(){const v=$('block').value.trim();if(!BLOCKS.includes(v))throw Error('허용된 29개 블록 중 하나를 선택해 주세요.');return v}
+function getBlock(){const v=$('block').value.trim();if(!ALL_BLOCKS.has(v))throw Error('등록된 블록 중 하나를 선택해 주세요.');return v}
 async function authCheck(){
  const {data:{user:u},error:e}=await sb.auth.getUser();if(e)throw e;if(!u)throw Error('로그인되지 않았습니다.');
  const {data:p,error:pe}=await sb.from('profiles').select('role').eq('id',u.id).single();if(pe)throw pe;
  if(p?.role!=='super_admin')throw Error('슈퍼관리자(super_admin) 권한이 없습니다. 일반 관리자(admin)는 업데이트할 수 없습니다.');
- user=u;show(true);status('슈퍼관리자로 인증되었습니다.');await refresh();
+ user=u;show(true);status('슈퍼관리자로 인증되었습니다.');await loadCustom();await refresh();
 }
 $('login').onclick=async()=>{try{show(false);const url=$('url').value.trim(),key=$('key').value.trim();if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url))throw Error('Supabase URL을 확인해 주세요.');if(!key)throw Error('공개용 키가 필요합니다.');sb=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});const {error:e}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('pass').value});$('pass').value='';if(e)throw e;await authCheck()}catch(e){error(e)}};
 $('logout').onclick=async()=>{await sb?.auth.signOut();user=null;show(false);$('preview').removeAttribute('srcdoc');status('로그아웃했습니다.')};
-$('stage').onclick=async()=>{try{if(!user)throw Error('로그인이 필요합니다.');const b=getBlock(),file=$('file').files[0];if(!file||!file.name.toLowerCase().endsWith('.html'))throw Error('HTML 파일을 선택해 주세요.');if(file.size>750000)throw Error('파일이 750KB를 초과합니다.');const source=await file.text();if(!source.trim())throw Error('빈 HTML 파일입니다.');const current=versions.filter(x=>x.block_key===b);if(current.length>=3)status('현재 3개 버전입니다. 운영 중인 버전이 가장 오래된 경우 안전을 위해 등록을 중단합니다. 그 외에는 오래된 버전을 자동 정리합니다.');const v=Math.max(0,...current.map(x=>x.version_no))+1;const {error:e}=await sb.from('jinil_block_versions').insert({block_key:b,version_no:v,html_source:source,created_by:user.id});if(e)throw e;status('버전 V'+v+' 등록 완료. 운영 화면은 변경되지 않았습니다.');await refresh()}catch(e){error(e)}};
+$('stage').onclick=async()=>{try{if(!user)throw Error('로그인이 필요합니다.');const b=getBlock(),file=$('file').files[0];if(!file||!file.name.toLowerCase().endsWith('.html'))throw Error('HTML 파일을 선택해 주세요.');if(file.size>750000)throw Error('파일이 750KB를 초과합니다.');const source=await file.text();if(!source.trim())throw Error('빈 HTML 파일입니다.');const current=versions.filter(x=>x.block_key===b);if(current.length>=3)throw Error('버전 3개 제한에 도달했습니다. 이전 버전을 안전하게 정리한 후 등록해야 합니다.');const v=Math.max(0,...current.map(x=>x.version_no))+1;const {error:e}=await sb.from('jinil_block_versions').insert({block_key:b,version_no:v,html_source:source,created_by:user.id});if(e)throw e;status('버전 V'+v+' 등록 완료. 운영 화면은 변경되지 않았습니다.');await refresh()}catch(e){error(e)}};
 $('refresh').onclick=()=>refresh().catch(error);
 async function refresh(){
  const [vr,rr]=await Promise.all([sb.from('jinil_block_versions').select('*').order('created_at',{ascending:false}),sb.from('jinil_block_releases').select('*')]);
  if(vr.error)throw vr.error;if(rr.error)throw rr.error;versions=vr.data;releases=Object.fromEntries(rr.data.map(x=>[x.block_key,x.version_id]));
  $('versions').replaceChildren();
- if(!versions.length){$('versions').textContent='아직 등록된 버전이 없습니다.';return}
+ if(!versions.length){$('versions').textContent='아직 등록된 버전이 없습니다. 새 기타블록 폴더는 등록했지만 HTML이 없을 수도 있습니다.';return}
  for(const v of versions){const item=document.createElement('div');item.className='item';
  const active=releases[v.block_key]===v.id;
  item.innerHTML='<strong>'+safe(v.block_key)+' · V'+v.version_no+'</strong> <span class="muted">'+safe(v.state)+(active?' · 배포 대상으로 지정됨':'')+'</span><div></div>';
@@ -42,7 +85,7 @@ async function refresh(){
  const button=(label,action)=>{const b=document.createElement('button');b.textContent=label;b.onclick=()=>action().catch(error);holder.append(b)};
  button('격리 미리보기',async()=>{$('preview').srcdoc=v.html_source;status('V'+v.version_no+' 미리보기 실행. 기능과 화면을 직접 확인하세요.')});
  if(v.state==='staged')button('테스트 통과로 기록',async()=>{if(!confirm('미리보기를 실제 확인했고 테스트가 통과했습니까?'))return;const {error:e}=await sb.from('jinil_block_versions').update({state:'tested',tested_at:new Date().toISOString()}).eq('id',v.id);if(e)throw e;status('테스트 통과 기록 완료');await refresh()});
- if(v.state==='tested'&&!active)button('배포 대상 지정 / 복구',async()=>{if(!confirm('Supabase 배포 버전 포인터를 변경하시겠습니까? 기존 HTML 파일은 교체되지 않습니다.'))return;const {error:e}=await sb.from('jinil_block_releases').upsert({block_key:v.block_key,version_id:v.id,updated_by:user.id});if(e)throw e;status('버전 포인터 갱신 완료. 실제 운영 HTML 배포는 별도 연결이 필요합니다.');await refresh()});
+ if(v.state==='tested'&&!active)button('배포 대상 지정 / 복구',async()=>{if(!confirm('Supabase 배포 버전 포인터를 변경하시겠습니까? 기존 HTML 파일은 교체되지 않습니다.'))return;const {error:e}=await sb.from('jinil_block_releases').upsert({block_key:v.block_key,version_id:v.id,updated_by:user.id});if(e)throw e;status('버전 배포 대상 지정 완료. 회원별 권한을 지정한 뒤 V72에서 배포 상태를 확인하세요. GitHub 원본 HTML 파일은 자동 교체되지 않습니다.');await refresh()});
  $('versions').append(item);
  }
 }
