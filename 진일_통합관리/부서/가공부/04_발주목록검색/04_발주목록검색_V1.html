@@ -107,4 +107,5 @@ for(const id of ['query','start','end'])$(id).addEventListener('input',render);
 $('logout').onclick=async()=>{if(interval)clearInterval(interval);if(channel&&sb)await sb.removeChannel(channel);await sb?.auth?.signOut();profile=null;canMonitor=false;orders=[];$('workspace').hidden=true;$('identity').textContent='로그아웃됨';notify('로그아웃했습니다.')};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&profile)refresh()});
 try{const saved=JSON.parse(localStorage.getItem(cfgKey)||'{}');$('url').value=saved.url||'';$('key').value=saved.key||'';}catch{}
-</script></main></body></html>
+</script></main><script src="../../../common/pointer-wheel.js" defer></script>
+</body></html>
