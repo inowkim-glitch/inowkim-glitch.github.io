@@ -35,7 +35,7 @@ create policy "jinil_orders_read" on public.jinil_orders_v1 for select to authen
  created_by = (select auth.uid()) or
  exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.role = 'admin') or
  exists (select 1 from public.jinil_dispatches_v1 d join public.profiles p
- on p.id = (select auth.uid()) where d.order_id = id and
+ on p.id = (select auth.uid()) where d.order_id = public.jinil_orders_v1.id and
  (p.department = d.recipient_department or
  (p.department = '생산동' and d.recipient_department = '생산부') or
  (p.department = '가공동' and d.recipient_department = '가공부')))
