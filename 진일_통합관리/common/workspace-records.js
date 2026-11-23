@@ -5,11 +5,11 @@ const inputFields=[...(form?.querySelectorAll('[name^="f"]')||[])];
 const labels=inputFields.map(f=>f.closest('label')?.firstChild?.textContent?.trim()||f.name);
 const auth=document.createElement('section');auth.className='panel';auth.innerHTML='<h2>Supabase 연결 · 인증</h2><div class="fields"><label>프로젝트 URL<input id="svurl" placeholder="https://xxxx.supabase.co"></label><label>공개용 키<input id="svkey" placeholder="anon/publishable"></label><label>이메일<input id="svmail" type="email"></label><label>비밀번호<input id="svpass" type="password"></label></div><div class="tools"><button id="svlogin">연결·로그인</button><button id="svlogout" class="secondary">로그아웃</button><button id="svrefresh" class="secondary">서버 조회</button></div><p id="svwho" role="status">로그인이 필요합니다.</p>';
 main.insertBefore(auth,panel||tbody.closest('section'));
-let sb=null,profile=null,items=[],channel=null,busy=false;
+let sb=null,profile=null,items=[],channel=null,busy=false,grantedToMonitor=false;
 const canonical=v=>({'본사 총무':'총무부','생산동':'생산부','가공동':'가공부','테프론동':'테프론부'}[v]||v);
 const currentDept=()=>canonical(profile?.department||'');
-const writable=()=>profile&&!cfg.readonly&&!cfg.calendar&&(profile.role==='admin'||currentDept()===cfg.department||cfg.department==='기타블록');
-const allowed=()=>profile&&(profile.role==='admin'||currentDept()===cfg.department||currentDept()==='총무부'||cfg.department==='기타블록'||['생산부:생산부재고확인','테프론부:재고확인','가공부:소재발주_확인'].includes(cfg.key));
+const writable=()=>profile&&!cfg.readonly&&!cfg.calendar&&(profile.role==='super_admin'||(profile.role==='staff'&&(currentDept()===cfg.department||cfg.department==='기타블록')));
+const allowed=()=>profile&&(profile.role==='super_admin'||(profile.role==='admin'?grantedToMonitor:(currentDept()===cfg.department||currentDept()==='총무부'||cfg.department==='기타블록'||['생산부:생산부재고확인','테프론부:재고확인','가공부:소재발주_확인'].includes(cfg.key))));
 const say=s=>{status.textContent=s};
 try{const c=JSON.parse(localStorage.getItem('jinil_config')||'{}');$('svurl').value=c.url||'';$('svkey').value=c.key||''}catch{}
 if(panel)panel.hidden=true;
@@ -33,13 +33,13 @@ $('svlogin').onclick=async()=>{try{
  if(sb&&channel)await sb.removeChannel(channel);sb=createClient(url,key);
  let {data:{user}}=await sb.auth.getUser();if(!user){const z=await sb.auth.signInWithPassword({email:$('svmail').value.trim(),password:$('svpass').value});if(z.error)throw z.error;user=z.data.user}
  if(!user)throw Error('로그인에 실패했습니다.');
- const p=await sb.from('profiles').select('role,department').eq('id',user.id).single();if(p.error)throw p.error;profile=p.data;if(!allowed()){profile=null;throw Error('해당 부서 조회 권한이 없습니다.')}
+ const p=await sb.from('profiles').select('role,department').eq('id',user.id).single();if(p.error)throw p.error;profile=p.data;if(profile.role==='admin'){const grant=await sb.rpc('jinil_admin_has_block',{module:cfg.key});if(grant.error)throw grant.error;grantedToMonitor=grant.data===true;}else grantedToMonitor=false;if(!allowed()){profile=null;throw Error('해당 부서 조회 권한이 없습니다.')}
  localStorage.setItem('jinil_config',JSON.stringify({url,key}));$('svwho').textContent=profile.department+' / '+profile.role;
  if(panel)panel.hidden=!writable();await refresh();
  channel=sb.channel('jinil-ws-'+crypto.randomUUID()).on('postgres_changes',{event:'*',schema:'public',table:cfg.calendar?'jinil_dispatches':'jinil_workspace_records'},refresh).subscribe();
  }catch(e){say('연결 오류: '+e.message)}};
 $('svrefresh').onclick=refresh;
-$('svlogout').onclick=async()=>{if(sb&&channel)await sb.removeChannel(channel);if(sb)await sb.auth.signOut();sb=null;profile=null;items=[];tbody.replaceChildren();if(panel)panel.hidden=true;$('svwho').textContent='로그아웃';say('로그아웃되었습니다.')};
+$('svlogout').onclick=async()=>{if(sb&&channel)await sb.removeChannel(channel);if(sb)await sb.auth.signOut();sb=null;profile=null;grantedToMonitor=false;items=[];tbody.replaceChildren();if(panel)panel.hidden=true;$('svwho').textContent='로그아웃';say('로그아웃되었습니다.')};
 if(form)form.onsubmit=async e=>{e.preventDefault();if(!writable())return say('쓰기 권한이 없습니다.');try{
  const values=inputFields.map(f=>String(f.value).trim());if(!values[0])throw Error('첫 번째 값을 입력해 주세요.');
  const r=await sb.from('jinil_workspace_records').insert({module_key:cfg.key,department:cfg.department,payload:{values,labels,prototype:true}});if(r.error)throw r.error;form.reset();await refresh();
