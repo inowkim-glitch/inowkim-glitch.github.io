@@ -1503,7 +1503,7 @@ body:not(.jinil-live-authorized) .shell{visibility:hidden!important}
 #jinil-live-gate .panel{max-width:520px;width:100%;background:white;border:1px solid #ccd9d0;border-radius:16px;box-shadow:0 12px 35px #1739251c;padding:24px}
 #jinil-live-gate label{display:block;margin-top:12px;font-weight:650}
 #jinil-live-gate input{display:block;width:100%;margin-top:5px;padding:11px;border:1px solid #abc1b0;border-radius:8px}
-#jinil-live-gate button{background:#236a40;color:white;border:0;padding:11px 18px;border-radius:8px;cursor:pointer;margin-top:14px}
+#jinil-live-gate button[type="submit"]{background:#236a40;color:white;border:0;padding:11px 18px;border-radius:8px;cursor:pointer;margin-top:14px;display:inline-block;width:auto;min-width:0;position:static}
 #jinil-live-gate .note{font-size:12px;color:#6a5940;background:#fff8e9;padding:11px;margin-top:10px}
 #jinil-live-msg{font-size:13px;white-space:pre-wrap;color:#852e28}
 </style></head>
@@ -1515,7 +1515,7 @@ body:not(.jinil-live-authorized) .shell{visibility:hidden!important}
 <label>Supabase URL<input id="jinil-live-url" placeholder="https://xxxx.supabase.co" required></label>
 <input id="jinil-live-key" type="hidden" value="sb_publishable_LpBmejeme6ViqGyKuGrchw_F8Z8cVVk"><p style="color:#276d44;font-size:12px">✓ Supabase 공개용 키 자동 연결 (직접 입력하지 않아도 됩니다)</p>
 <label>회원 이메일<input id="jinil-live-email" type="email" required></label>
-<label>비밀번호<input id="jinil-live-password" type="password" required></label>
+<label>비밀번호<input id="jinil-live-password" type="password" autocomplete="current-password" required></label>
 <button type="submit">Supabase 로그인</button>
 </form>
 <p id="jinil-live-msg" role="status"></p>
