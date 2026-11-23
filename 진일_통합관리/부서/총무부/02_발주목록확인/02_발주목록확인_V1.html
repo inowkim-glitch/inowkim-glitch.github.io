@@ -1,1 +1,39 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>진일 총무부 발주목록확인</title><link rel="stylesheet" href="../../../department.css"></head><body><main><h1>총무부 · 발주목록확인</h1><p>V72 분리 작업용 경로입니다. 원본 기능 코드 이식 전이며, 실제 업무 처리는 아직 연결되지 않았습니다.</p><a href="../../../index.html">메인으로</a></main></body></html>
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>진일 통합관리 | 총무부 발주목록확인</title>
+<style>
+:root{font-family:"Malgun Gothic",sans-serif;color:#244333;background:#f5f8f3}
+*{box-sizing:border-box}body{margin:0;padding:20px}
+main{max-width:1000px;margin:auto;background:#fff;border:1px solid #d9e4da;border-radius:15px;padding:24px}
+h1{font-size:24px}section{border-top:1px solid #dde6db;padding:18px 0}
+label{display:block;font-size:13px;font-weight:700;margin:8px 0}
+input,select,button{font:inherit;padding:9px 12px;border:1px solid #b9cbbb;border-radius:8px}
+input:not([type=checkbox]){width:100%;max-width:480px}
+button{background:#24523d;color:#fff;cursor:pointer}
+button:disabled{opacity:.45}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.record{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid #d6e3d8;padding:12px;border-radius:9px;margin:8px 0}
+#result{background:#eef5ed;padding:12px;white-space:pre-wrap;min-height:44px}
+#who,#lastSync{font-size:12px;color:#617568}
+.recips{display:flex;flex-wrap:wrap;gap:15px}
+</style></head>
+<body><main><h1>총무부 · 발주목록확인</h1>
+<p>V72 업무 분리 단계의 Supabase 실연동 모듈입니다. 발주·송부와 상태 처리부터 연결했습니다.</p>
+<section><h2>연결 및 로그인</h2><label>Supabase 프로젝트 주소<input id="url" placeholder="https://프로젝트.supabase.co"></label>
+<label>공개용 anon/publishable 키<input id="key" placeholder="공개용 키"></label>
+<label>이메일<input id="email" type="email"></label><label>비밀번호<input id="password" type="password"></label>
+<div class="actions"><button id="connect">연결/로그인</button><button id="logout">로그아웃</button></div><p id="who">로그인 전</p></section>
+<div id="editor" hidden>
+<section><h2>발주 저장 및 부서별 일괄 송부</h2>
+<label>발주번호<input id="orderNo"></label><label>업체명<input id="company"></label>
+<label>품목<input id="item"></label><label>수량<input id="quantity"></label>
+<div class="actions"><button id="create">발주 저장</button><button id="send">선택 부서에 송부</button></div>
+<div class="recips"><label><input type="checkbox" name="recipient" value="생산부"> 생산부</label>
+<label><input type="checkbox" name="recipient" value="테프론부"> 테프론부</label>
+<label><input type="checkbox" name="recipient" value="가공부"> 가공부</label></div>
+</section>
+<section><h2>부서별 발주 대기·확인·완료</h2><label>대상 부서<select id="department">
+<option value="생산부">생산부</option><option value="테프론부">테프론부</option><option value="가공부">가공부</option></select></label>
+<button id="reload">서버에서 새로고침</button><span id="lastSync"></span><div id="records"></div>
+</section></div>
+<pre id="result" role="status">연결 대기 중</pre>
+</main><script type="module" src="../../../common/order-workflow.js"></script></body></html>
