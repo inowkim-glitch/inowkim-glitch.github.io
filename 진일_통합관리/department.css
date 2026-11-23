@@ -1,1 +1,38 @@
-/* V72 department common stylesheet: extraction pending; do not assume completed */
+/* 진일 V72 공통 부서 디자인 1차 적용 | 2026-11-23
+   원본 SHA256: b5262209ec64e0e8840e4c8459a0f4dcf5bccdecbabbdb34bf0625473e7cc947
+   V72 원본의 공통 레이아웃과 발주 상태 표시 규칙만 우선 이식.
+   업무별 세부 CSS 분리 및 브라우저 검증은 미완료. 원본은 수정하지 않음. */
+:root{--bg:#f4f5f2;--ink:#24342f;--muted:#7a8982;--line:#e1e7e1;--green:#26483d;--gold:#b99a63;--white:#fff;--soft:#edf1ec}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:"Pretendard","Noto Sans KR","Malgun Gothic",sans-serif;color:var(--ink)}
+button,input,select{font:inherit}button{cursor:pointer}
+.workspace,.sidebar{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 10px 36px rgba(27,55,42,.035)}
+.workspace{min-height:680px;padding:32px}
+.section-title{font-size:26px;letter-spacing:-1.1px;margin:11px 0 7px;font-weight:750}
+.hint{color:var(--muted);font-size:13px;line-height:1.7;margin:0}
+.test-module{display:grid;gap:15px;margin-top:20px;color:#244333}
+.test-card{border:1px solid #dce7dd;border-radius:15px;background:#fbfcfa;padding:18px}
+.test-card h3{margin:0 0 10px;font-size:17px}
+.test-card label{display:block;font-size:13px;font-weight:700;margin:10px 0 5px}
+.test-card input,.test-card textarea{width:100%;box-sizing:border-box;border:1px solid #cbd9ce;border-radius:9px;padding:11px;background:white;color:#244333;font:inherit}
+.test-card textarea{min-height:110px}
+.test-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.test-actions button{border:1px solid #b8cbbb;background:#f0f6ef;color:#24523d;padding:9px 13px;border-radius:9px;cursor:pointer}
+.test-actions button.primary{background:#24523d;color:white}
+.test-note{font-size:12px;color:#697b70;line-height:1.65}
+.order-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0 18px}
+.order-toolbar input{flex:1;min-width:190px}
+.order-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch;min-height:0}
+.order-column{display:flex;flex-direction:column;min-width:0;border:1px solid #d8e4d8;background:#f8faf7;border-radius:14px;padding:12px;height:535px;min-height:535px;max-height:535px;overflow:hidden}
+.order-column-head{font-weight:800;text-align:center;padding:8px 4px 14px;border-bottom:1px solid #dce7dc;margin-bottom:12px;color:#34543d}
+.order-column-body{display:flex;flex-direction:column;gap:10px;min-height:0;flex:1;overflow-y:auto;overflow-x:hidden}
+.order-row{width:100%;text-align:left;border:2px solid #cbd8cd;border-radius:13px;background:#fff;padding:14px 16px;color:#294332;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:92px;flex:none;font:inherit}
+.order-row:hover{background:#f6faf4}
+.order-row[data-status="checked"]{border-color:#25965c;background:#f4fbf5}
+.order-row[data-status="done"]{border-color:#d64545;background:#fff6f5}
+.order-state{font-size:22px;font-weight:850;line-height:1.1;white-space:nowrap;color:#526357}
+.order-row[data-status="checked"] .order-state{color:#18834a}
+.order-row[data-status="done"] .order-state{color:#c83232}
+.order-empty{font-size:13px;color:#738176;text-align:center;padding:24px 8px}
+@media(max-width:880px){.workspace{padding:20px}}
+@media(max-width:650px){.order-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.order-column{min-width:0;padding:5px}.order-column-head{font-size:12px}.order-row{padding:7px 5px}.order-state{font-size:17px}}
