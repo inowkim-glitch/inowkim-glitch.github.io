@@ -148,6 +148,17 @@ async function save(){
  if(r.error)throw r.error;say('개인 블록 표시·위치·크기·접힘 설정 Supabase 저장 완료');layoutMsg('서버 저장 완료. 다음 로그인 시에도 내 화면 배치가 유지됩니다.')}
  catch(e){say('저장 오류: '+e.message)}
 }
+// Keep original href values for user-specific layout keys. Only routed clicks resolve active releases.
+document.addEventListener('click',e=>{
+ const a=e.target.closest?.('a.tile');
+ if(!a||!profile||e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
+ const path=a.getAttribute('href');
+ const dept=a.closest('.workspace-dept')?.dataset.dept;
+ const permitted=profile.role==='super_admin'||(profile.role==='admin'?granted.has(path):(dept?canon(profile.department)===dept:granted.has(path)));
+ if(!permitted){e.preventDefault();say('해당 블록 접근 권한이 없습니다.');return;}
+ e.preventDefault();
+ location.href='block_runtime.html?block='+encodeURIComponent(path);
+});
 $('wsLogin').onclick=login;$('wsSave').onclick=save;
 $('wsLogout').onclick=async()=>{if(sb)await sb.auth.signOut();hide();say('로그아웃했습니다.')};hide();
 })();</script></main></body></html>
