@@ -1,74 +1,84 @@
 /**
- * Jinil stage 5: Supabase order queue adapter.
- * Works only after integration/sql/jinil_orders_dispatches_v1.sql is applied.
- * The caller supplies an authenticated supabase-js client.
- * No secrets and no automatic DB modification at module load.
+ * Jinil V72 Supabase workflow adapter - integration branch.
+ * Actual deployed tables: public.jinil_orders, public.jinil_dispatches.
+ * Requires authenticated supabase-js client and 2026-11-23 dispatch guard migration.
+ * All errors are propagated. No credentials stored here.
  */
-import { prepareDepartmentDispatch } from "./jinil-order-dispatch-v1.js";
-
-function requireClient(client) {
-  if (!client?.from || !client?.auth?.getUser) throw new Error("인증된 Supabase 클라이언트가 필요합니다.");
-}
-async function currentUser(client) {
-  const { data, error } = await client.auth.getUser();
-  if (error || !data?.user?.id) throw new Error("로그인이 필요합니다.");
+import { prepareDepartmentDispatch } from './jinil-order-dispatch-v1.js';
+const DEPARTMENT_ALIAS = {'본사 총무':'총무부','가공동':'가공부','생산동':'생산부'};
+export function canonicalDepartment(value) { return DEPARTMENT_ALIAS[value] || value; }
+async function userId(sb) {
+  if (!sb?.auth?.getUser || !sb?.from) throw new Error('Supabase 연결을 확인하세요.');
+  const {data,error}=await sb.auth.getUser();
+  if(error || !data?.user?.id) throw new Error('로그인 후 이용하세요.');
   return data.user.id;
 }
-function check(result, operation) {
-  if (result.error) throw new Error(operation + ": " + result.error.message);
+function ok(result,label) {
+  if(result.error) throw new Error(label+': '+result.error.message);
   return result.data;
 }
-
-/** Create the order only. A send is confirmed only if every recipient is persisted. */
-export async function createOrder(client, { orderNumber, payload }) {
-  requireClient(client);
-  const uid = await currentUser(client);
-  if (!String(orderNumber || "").trim()) throw new Error("발주번호를 입력하세요.");
-  const row = { order_number: orderNumber.trim(), payload: payload ?? {}, created_by: uid };
-  return check(await client.from("jinil_orders_v1").insert(row).select("id,order_number,payload,created_at").single(), "발주서 저장 실패");
+export async function createOrder(sb,{orderNumber,payload={}}) {
+  const uid=await userId(sb);
+  if(!String(orderNumber||'').trim()) throw new Error('발주번호가 필요합니다.');
+  const data=ok(await sb.from('jinil_orders').insert({
+    order_no:String(orderNumber).trim(),payload,created_by:uid
+  }).select('id,order_no,payload,created_at').single(),'발주 저장 실패');
+  return data;
 }
-
+export async function sendOrder(sb,{orderId,recipients}) {
+  const uid=await userId(sb);
+  const base=prepareDepartmentDispatch({orderId,recipients:recipients.map(canonicalDepartment),sentBy:uid});
+  const order=ok(await sb.from('jinil_orders').select('id,order_no,payload')
+    .eq('id',orderId).single(),'발주 원본 조회 실패');
+  const rows=base.map(v=>({
+    order_id:v.order_id,department:v.recipient_department,
+    status:'대기',updated_by:uid,
+    order_summary:{order_no:order.order_no,...(order.payload||{})}
+  }));
+  const saved=ok(await sb.from('jinil_dispatches')
+    .insert(rows).select('id,order_id,department,status,sent_at,order_summary'),'발주 송부 실패');
+  if(!Array.isArray(saved)||saved.length!==rows.length)
+    throw new Error('일괄 발송 결과 수량이 다릅니다. 다시 송부하지 말고 서버 기록을 확인하세요.');
+  return saved;
+}
+export async function loadDepartmentQueue(sb,{department,status=null}){
+  await userId(sb);
+  const canonical=canonicalDepartment(department);
+  if(!['테프론부','생산부','가공부'].includes(canonical))
+    throw new Error('수신 부서를 선택하세요.');
+  let q=sb.from('jinil_dispatches').select(
+    'id,order_id,department,status,sent_at,confirmed_at,completed_at,order_summary'
+  ).eq('department',canonical).order('sent_at',{ascending:false});
+  if(status)q=q.eq('status',status);
+  return ok(await q,'목록 동기화 실패');
+}
 /**
- * Dispatch to recipients. A failed request is NOT marked sent.
- * DB has unique(order_id,recipient_department) to prevent duplicate delivery.
- * Multi-row INSERT is atomic within a single PostgREST request.
+ * Uses optimistic concurrency. The DB trigger prevents skipping steps,
+ * changing the department, and changing immutable metadata.
  */
-export async function sendOrder(client, { orderId, recipients }) {
-  requireClient(client);
-  const uid = await currentUser(client);
-  const rows = prepareDepartmentDispatch({ orderId, recipients, sentBy: uid });
-  const response = await client.from("jinil_dispatches_v1")
-    .insert(rows)
-    .select("id,order_id,recipient_department,status,sent_at");
-  const stored = check(response, "부서별 송부 실패");
-  if (!Array.isArray(stored) || stored.length !== rows.length) {
-    throw new Error("송부 결과 개수가 일치하지 않습니다. 서버 기록을 확인하세요.");
-  }
-  return stored;
+export async function transitionOrder(sb,{dispatchId,expectedStatus,nextStatus}){
+  const uid=await userId(sb);
+  if(!((expectedStatus==='대기'&&nextStatus==='확인')||
+       (expectedStatus==='확인'&&nextStatus==='완료')))
+    throw new Error('대기 → 확인 → 완료 순서대로 처리하세요.');
+  const now=new Date().toISOString();
+  const patch={status:nextStatus,updated_by:uid};
+  if(nextStatus==='확인') patch.confirmed_at=now;
+  if(nextStatus==='완료') patch.completed_at=now;
+  const rows=ok(await sb.from('jinil_dispatches').update(patch)
+    .eq('id',dispatchId).eq('status',expectedStatus)
+    .select('id,status,department,confirmed_at,completed_at'),'상태 변경 실패');
+  if(!Array.isArray(rows)||rows.length!==1)
+    throw new Error('다른 기기에서 상태가 변경됐거나 권한이 없습니다. 목록을 새로고침하세요.');
+  return rows[0];
 }
-/** Department queue, ordered oldest-first, with RLS controlling visibility. */
-export async function loadDepartmentQueue(client, { department, status = null }) {
-  requireClient(client);
-  await currentUser(client);
-  if (!department) throw new Error("부서가 필요합니다.");
-  let query = client.from("jinil_dispatches_v1")
-    .select("id,order_id,recipient_department,status,sent_at,confirmed_at,completed_at")
-    .eq("recipient_department", department).order("sent_at", { ascending: true });
-  if (status) query = query.eq("status", status);
-  return check(await query, "부서별 대기목록 조회 실패");
+export function watchDepartmentQueue(sb,{department,onChange}){
+  if(typeof onChange!=='function') throw new Error('변경 알림 콜백이 필요합니다.');
+  const canonical=canonicalDepartment(department);
+  const channel=sb.channel('jinil-'+canonical+'-'+Math.random().toString(36).slice(2))
+    .on('postgres_changes',{event:'*',schema:'public',table:'jinil_dispatches',
+      filter:'department=eq.'+canonical},()=>onChange()).subscribe();
+  return ()=>sb.removeChannel(channel);
 }
-/** Subscribe to change notifications, then requery through RLS. */
-export function watchDepartmentQueue(client, { department, onChange }) {
-  requireClient(client);
-  if (typeof onChange !== "function") throw new TypeError("onChange callback required");
-  const channel = client.channel("jinil-dispatch-" + department + "-" + Math.random().toString(36).slice(2))
-    .on("postgres_changes", {
-      event: "*", schema: "public", table: "jinil_dispatches_v1",
-      filter: "recipient_department=eq." + department
-    }, () => onChange())
-    .subscribe();
-  return () => client.removeChannel(channel);
-}
-// '확인'/'완료' intentionally not implemented as client-side updates.
-// They require an authenticated, guarded server-side transaction to prevent
-// another department from writing or skipping a status.
+// Realtime notifications require appropriate replication publication setup.
+// Scheduled and user-triggered reads must work even when Realtime is unavailable.
