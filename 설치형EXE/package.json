@@ -1,0 +1,35 @@
+{
+  "name": "jinil-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "진일 통합관리 서울·화성 공통 데스크톱 창",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "kr.co.jinil.integrated",
+    "productName": "진일 통합관리",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.cjs",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
