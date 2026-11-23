@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>진일 · 슈퍼관리자 업데이트 센터</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5f3;color:#20382e;font-family:system-ui,"Malgun Gothic",sans-serif}header{background:#183d2d;color:white;padding:20px 5vw}header h1{margin:0;font-size:22px}header small{color:#cce0d2}main{max-width:1100px;margin:auto;padding:16px}section{background:#fff;border:1px solid #dce5dc;border-radius:14px;padding:18px;margin:15px 0}h2{font-size:17px;margin:0 0 14px}label{font-size:13px;display:block;margin:8px 0 5px}input,select,button{font:inherit}input,select{width:100%;padding:10px;border:1px solid #bdccbd;border-radius:7px}button{border:0;border-radius:7px;background:#286b47;color:white;padding:10px 15px;cursor:pointer;margin:5px 5px 5px 0}button:disabled{background:#95a59a;cursor:not-allowed}.muted{font-size:13px;color:#5f7065}.warn{border-left:4px solid #a86c23;padding:10px;background:#fff8ed}.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.item{border:1px solid #dbe5dc;border-radius:10px;padding:12px;margin:8px 0}.item strong{overflow-wrap:anywhere}iframe{width:100%;height:420px;border:2px dashed #8da99a;border-radius:9px;background:white}#panel{display:none}#status{white-space:pre-wrap;overflow-wrap:anywhere}a{color:#286b47}code{overflow-wrap:anywhere}
+</style></head><body>
+<header><h1>JINIL · 슈퍼관리자 업데이트 센터</h1><small>V72 개발 브랜치 · 등록 → 격리 테스트 → 승인 → 배포 대상 지정 → 복구</small></header>
+<main>
+<section><p class="warn"><b>운영 주의</b> 이 화면은 V72 작업용 업데이트 관리 기능입니다. '배포 대상 지정'은 Supabase의 버전 포인터를 변경합니다. 기존 29개 HTML 파일이나 GitHub Pages 운영 화면을 직접 교체하지 않습니다. 실제 배포 자동화는 별도 연결·검증 후 사용해야 합니다.</p><p class="muted">HTML 미리보기는 격리된 iframe에서 실행됩니다. 외부 네트워크를 사용하는 코드가 포함될 수 있으므로 신뢰할 수 있는 파일만 올리세요.</p></section>
+<section><h2>1. 로그인 및 슈퍼관리자 권한 확인</h2><div class="row"><div><label>Supabase URL</label><input id="url" placeholder="https://프로젝트.supabase.co"></div><div><label>공개용 키 (service_role 금지)</label><input id="key" type="password"></div><div><label>이메일</label><input id="email" autocomplete="username" type="email"></div><div><label>비밀번호</label><input id="pass" type="password" autocomplete="current-password"></div></div><button id="login">로그인 및 확인</button><button id="logout" disabled>로그아웃</button><p id="status" role="status">로그인이 필요합니다.</p></section>
+<div id="panel"><section><h2>2. HTML 파일 불러오기 및 버전 등록</h2><label>블록 ID (부서/블록 영문·숫자·밑줄·하이픈)</label><input id="block" placeholder="general/order_list"><label>등록할 HTML 파일</label><input id="file" type="file" accept=".html,text/html"><p class="muted">파일 최대 750KB. 동일 블록은 최대 3개 버전만 허용합니다. 기존 파일은 자동 덮어쓰지 않습니다.</p><button id="stage">새 버전 등록</button></section>
+<section><h2>3. 불러온 버전 확인·테스트·배포 대상 지정·복구</h2><button id="refresh">버전 목록 새로고침</button><div id="versions"></div><p class="muted">미리보기 후 '테스트 통과'를 선택하면 배포 대상으로 지정할 수 있습니다. 이전에 테스트를 통과한 버전을 다시 지정하면 복구 포인터로 활용할 수 있습니다.</p><iframe id="preview" sandbox="allow-scripts" referrerpolicy="no-referrer" title="격리된 HTML 테스트 화면"></iframe></section></div>
+<p class="muted"><a href="./index.html">WORKSPACE로 돌아가기</a></p></main>
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.49.8';
+const $=x=>document.getElementById(x); let sb=null,user=null,versions=[],releases={};
+function status(s){$('status').textContent=s} function error(e){status('오류: '+(e?.message||String(e)))}
+function show(yes){$('panel').style.display=yes?'block':'none';$('logout').disabled=!yes}
+function safe(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function getBlock(){const v=$('block').value.trim();if(!/^[a-zA-Z0-9_/-]{3,180}$/.test(v))throw Error('블록 ID 형식이 올바르지 않습니다.');return v}
+async function authCheck(){
+ const {data:{user:u},error:e}=await sb.auth.getUser();if(e)throw e;if(!u)throw Error('로그인되지 않았습니다.');
+ const {data:p,error:pe}=await sb.from('profiles').select('role').eq('id',u.id).single();if(pe)throw pe;
+ if(p?.role!=='super_admin')throw Error('슈퍼관리자(super_admin) 권한이 없습니다. 일반 관리자(admin)는 업데이트할 수 없습니다.');
+ user=u;show(true);status('슈퍼관리자로 인증되었습니다.');await refresh();
+}
+$('login').onclick=async()=>{try{show(false);const url=$('url').value.trim(),key=$('key').value.trim();if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url))throw Error('Supabase URL을 확인해 주세요.');if(!key)throw Error('공개용 키가 필요합니다.');sb=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});const {error:e}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('pass').value});$('pass').value='';if(e)throw e;await authCheck()}catch(e){error(e)}};
+$('logout').onclick=async()=>{await sb?.auth.signOut();user=null;show(false);$('preview').removeAttribute('srcdoc');status('로그아웃했습니다.')};
+$('stage').onclick=async()=>{try{if(!user)throw Error('로그인이 필요합니다.');const b=getBlock(),file=$('file').files[0];if(!file||!file.name.toLowerCase().endsWith('.html'))throw Error('HTML 파일을 선택해 주세요.');if(file.size>750000)throw Error('파일이 750KB를 초과합니다.');const source=await file.text();if(!source.trim())throw Error('빈 HTML 파일입니다.');const current=versions.filter(x=>x.block_key===b);if(current.length>=3)throw Error('3개 버전 제한입니다. 현재 시스템은 자동 삭제 대신 새 등록을 안전하게 차단합니다.');const v=Math.max(0,...current.map(x=>x.version_no))+1;const {error:e}=await sb.from('jinil_block_versions').insert({block_key:b,version_no:v,html_source:source,created_by:user.id});if(e)throw e;status('버전 V'+v+' 등록 완료. 운영 화면은 변경되지 않았습니다.');await refresh()}catch(e){error(e)}};
+$('refresh').onclick=()=>refresh().catch(error);
+async function refresh(){
+ const [vr,rr]=await Promise.all([sb.from('jinil_block_versions').select('*').order('created_at',{ascending:false}),sb.from('jinil_block_releases').select('*')]);
+ if(vr.error)throw vr.error;if(rr.error)throw rr.error;versions=vr.data;releases=Object.fromEntries(rr.data.map(x=>[x.block_key,x.version_id]));
+ $('versions').replaceChildren();
+ if(!versions.length){$('versions').textContent='아직 등록된 버전이 없습니다.';return}
+ for(const v of versions){const item=document.createElement('div');item.className='item';
+ const active=releases[v.block_key]===v.id;
+ item.innerHTML='<strong>'+safe(v.block_key)+' · V'+v.version_no+'</strong> <span class="muted">'+safe(v.state)+(active?' · 배포 대상으로 지정됨':'')+'</span><div></div>';
+ const holder=item.querySelector('div');
+ const button=(label,action)=>{const b=document.createElement('button');b.textContent=label;b.onclick=()=>action().catch(error);holder.append(b)};
+ button('격리 미리보기',async()=>{$('preview').srcdoc=v.html_source;status('V'+v.version_no+' 미리보기 실행. 기능과 화면을 직접 확인하세요.')});
+ if(v.state==='staged')button('테스트 통과로 기록',async()=>{if(!confirm('미리보기를 실제 확인했고 테스트가 통과했습니까?'))return;const {error:e}=await sb.from('jinil_block_versions').update({state:'tested',tested_at:new Date().toISOString()}).eq('id',v.id);if(e)throw e;status('테스트 통과 기록 완료');await refresh()});
+ if(v.state==='tested'&&!active)button('배포 대상 지정 / 복구',async()=>{if(!confirm('Supabase 배포 버전 포인터를 변경하시겠습니까? 기존 HTML 파일은 교체되지 않습니다.'))return;const {error:e}=await sb.from('jinil_block_releases').upsert({block_key:v.block_key,version_id:v.id,updated_by:user.id});if(e)throw e;status('버전 포인터 갱신 완료. 실제 운영 HTML 배포는 별도 연결이 필요합니다.');await refresh()});
+ $('versions').append(item);
+ }
+}
+</script></body></html>
