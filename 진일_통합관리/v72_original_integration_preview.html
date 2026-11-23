@@ -1506,7 +1506,11 @@ body:not(.jinil-live-authorized) .shell{visibility:hidden!important}
 #jinil-live-gate button[type="submit"]{background:#236a40;color:white;border:0;padding:11px 18px;border-radius:8px;cursor:pointer;margin-top:14px;display:inline-block;width:auto;min-width:0;position:static}
 #jinil-live-gate .note{font-size:12px;color:#6a5940;background:#fff8e9;padding:11px;margin-top:10px}
 #jinil-live-msg{font-size:13px;white-space:pre-wrap;color:#852e28}
-#jinil-test-blocks[hidden],#jinil-test-viewer[hidden]{display:none!important}
+#jinil-test-blocks[hidden],#jinil-test-viewer[hidden],#jinil-live-other-blocks[hidden]{display:none!important}
+#jinil-live-other-blocks{margin-top:14px;border-top:1px solid #c1d7c6;padding-top:13px}
+#jinil-live-other-blocks h3{font-size:13px;margin:0 0 8px;color:#24543a}
+#jinil-live-other-blocks button{display:block;width:100%;margin:7px 0;padding:12px;border:1px solid #9dbda4;border-radius:9px;background:#e6f2e8;text-align:left;color:#244a32;cursor:pointer;font:inherit;font-weight:700}
+#jinil-live-other-blocks small{display:block;font-size:11px;font-weight:400;margin-top:5px}
 #jinil-test-blocks{margin-top:14px;border-top:1px dashed #abc5b2;padding-top:13px}
 #jinil-test-blocks h3{font-size:13px;color:#345d48;margin:0 0 8px}
 #jinil-test-blocks .jinil-test-source{display:block;width:100%;padding:12px;margin:8px 0;background:#f0f5f1;border:2px dashed #8fb8a0;border-radius:12px;color:#1f5941;opacity:.62;cursor:pointer;text-align:left;transition:opacity .2s}
@@ -1549,7 +1553,7 @@ html,body{overscroll-behavior-y:auto!important}
 <h3>🧪 테스트 전용 블록 <button id="jinil-test-refresh" type="button" style="font-size:11px;padding:4px 6px">새로고침</button></h3>
 <div id="jinil-test-items"></div>
 <p style="font-size:11px;line-height:1.5;color:#647d6c">흐릿한 블록은 슈퍼관리자만 테스트할 수 있으며 회원에게 공개되지 않습니다.</p>
-</section><button class="add" id="addBtn">＋ 새로운 블럭 추가</button><p class="footnote">현재는 디자인 시안입니다.<br>블록 페이지에는 추후 기능을 연결합니다.</p></aside>
+</section><section id="jinil-live-other-blocks" hidden aria-label="사용 가능한 기타블록"><h3>기타블록</h3><div id="jinil-live-other-items"></div></section><button class="add" id="addBtn">＋ 새로운 블럭 추가</button><p class="footnote">현재는 디자인 시안입니다.<br>블록 페이지에는 추후 기능을 연결합니다.</p></aside>
 </main>
 <section id="adminScreen" class="admin-screen" hidden><div class="admin-top"><button class="back" id="adminBack" type="button">← 메인으로 돌아가기</button><h1>통합 관리자 페이지 <small>ADMIN MANAGEMENT</small></h1></div><div class="admin-content"><section style="padding:16px;margin-bottom:20px;border:1px solid #b9d4c2;border-radius:12px;background:#f3f9f4">
 <h2 style="margin:0 0 8px">블록 업데이트 관리</h2>
@@ -3237,6 +3241,7 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
  const normalize=v=>({'본사 총무':'총무부','생산동':'생산부','가공동':'가공부','테프론동':'테프론부'}[v]||v||'');
  const testPanel=LIVE_ID('jinil-test-blocks'),testItems=LIVE_ID('jinil-test-items');
  const viewer=LIVE_ID('jinil-test-viewer'),frame=LIVE_ID('jinil-test-frame');
+ const releasedPanel=LIVE_ID('jinil-live-other-blocks'),releasedItems=LIVE_ID('jinil-live-other-items');
  let stagedVersions=[];
  const nameFromPath=key=>{
    const parts=String(key||'').split('/');
@@ -3248,32 +3253,73 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
  viewer.addEventListener('click',e=>{if(e.target===viewer)closeTest()});
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!viewer.hidden)closeTest()});
  function clearTestBlocks(){stagedVersions=[];testItems.replaceChildren();testPanel.hidden=true;closeTest()}
+ function openOtherReleased(version,label){
+  if(!document.body.classList.contains('jinil-live-authorized'))return;
+  LIVE_ID('jinil-test-heading').textContent='기타블록 · '+label+' · 배포 버전 V'+version.version_no;
+  frame.srcdoc=version.html_source;viewer.hidden=false;LIVE_ID('jinil-test-close').focus();
+ }
+ async function refreshReleasedOther(){
+  releasedItems.replaceChildren();releasedPanel.hidden=true;
+  if(!liveClient||!loggedEmail)return;
+  const [custom,active]=await Promise.all([
+   liveClient.from('jinil_custom_other_blocks').select('block_key,display_name'),
+   liveClient.from('jinil_block_releases').select('block_key,version_id').like('block_key','기타블록/%')
+  ]);
+  if(custom.error)throw custom.error;if(active.error)throw active.error;
+  const visible=new Map((custom.data||[]).map(x=>[x.block_key,x.display_name]));
+  const assigned=(active.data||[]).filter(x=>visible.has(x.block_key));
+  if(!assigned.length)return;
+  const versions=await liveClient.from('jinil_block_versions').select('id,block_key,version_no,html_source,state').in('id',assigned.map(x=>x.version_id));
+  if(versions.error)throw versions.error;
+  const byId=new Map((versions.data||[]).filter(x=>x.state==='tested').map(x=>[x.id,x]));
+  for(const item of assigned){
+   const version=byId.get(item.version_id);if(!version)continue;
+   const label=visible.get(item.block_key);
+   const button=document.createElement('button');button.type='button';
+   button.append(document.createTextNode('▦ '+label));
+   const sub=document.createElement('small');sub.textContent='배포된 V'+version.version_no+' · 권한 있는 회원만 이용';button.append(sub);
+   button.addEventListener('click',()=>openOtherReleased(version,label));
+   releasedItems.append(button);
+  }
+  releasedPanel.hidden=!releasedItems.children.length;
+ }
  function showTestPreview(version){
    if(jinilLiveRole!=='super_admin'||!loggedEmail||!document.body.classList.contains('jinil-live-authorized'))return;
    LIVE_ID('jinil-test-heading').textContent='🧪 '+nameFromPath(version.block_key)+' · V'+version.version_no+' · 테스트 전용';
    frame.srcdoc=version.html_source;viewer.hidden=false;LIVE_ID('jinil-test-close').focus();
  }
  async function refreshTestBlocks(){
-   if(!liveClient||jinilLiveRole!=='super_admin'||!loggedEmail){clearTestBlocks();return}
-   const [v,r]=await Promise.all([
-     liveClient.from('jinil_block_versions').select('id,block_key,version_no,state,html_source,created_at').in('state',['staged','tested']).order('created_at',{ascending:false}),
-     liveClient.from('jinil_block_releases').select('block_key,version_id')
-   ]);
-   if(v.error)throw v.error;if(r.error)throw r.error;
-   const active=new Set((r.data||[]).map(x=>x.version_id)),latest=new Map();
-   for(const item of v.data||[]){if(!active.has(item.id)&&!latest.has(item.block_key))latest.set(item.block_key,item)}
-   stagedVersions=[...latest.values()];testItems.replaceChildren();testPanel.hidden=false;
-   if(!stagedVersions.length){
-     const p=document.createElement('p');p.style.cssText='font-size:12px;color:#778879';
-     p.textContent='등록된 테스트 블록이 없습니다.';testItems.append(p);return;
-   }
-   for(const version of stagedVersions){
-     const btn=document.createElement('button');btn.type='button';btn.className='jinil-test-source';
-     const title=document.createElement('strong');title.textContent='🧪 '+nameFromPath(version.block_key);
-     const note=document.createElement('small');
-     note.textContent='V'+version.version_no+' · '+(version.state==='tested'?'테스트 통과 · 배포 대기':'테스트 대기')+' · 슈퍼관리자 전용';
-     btn.append(title,note);btn.addEventListener('click',()=>showTestPreview(version));testItems.append(btn);
-   }
+  if(!liveClient||jinilLiveRole!=='super_admin'||!loggedEmail){clearTestBlocks();return}
+  const [v,r,c]=await Promise.all([
+   liveClient.from('jinil_block_versions').select('id,block_key,version_no,state,html_source,created_at').in('state',['staged','tested']).order('created_at',{ascending:false}),
+   liveClient.from('jinil_block_releases').select('block_key,version_id'),
+   liveClient.from('jinil_custom_other_blocks').select('block_key,display_name').order('created_at')
+  ]);
+  if(v.error)throw v.error;if(r.error)throw r.error;if(c.error)throw c.error;
+  const active=new Set((r.data||[]).map(x=>x.version_id));
+  const latest=new Map();
+  for(const item of v.data||[]){if(!active.has(item.id)&&!latest.has(item.block_key))latest.set(item.block_key,item)}
+  stagedVersions=[...latest.values()];
+  testItems.replaceChildren();testPanel.hidden=false;
+  const labelByKey=new Map((c.data||[]).map(x=>[x.block_key,x.display_name]));
+  const drawn=new Set();
+  function addTestCard(blockKey,version){
+   const label=labelByKey.get(blockKey)||nameFromPath(blockKey);
+   const btn=document.createElement('button');btn.type='button';btn.className='jinil-test-source';
+   const title=document.createElement('strong');title.textContent='🧪 '+label;
+   const note=document.createElement('small');
+   note.textContent=version?'V'+version.version_no+' · '+(version.state==='tested'?'테스트 통과 · 배포 대기':'테스트 대기'):'HTML 미등록 · V1 파일 필요';
+   btn.append(title,note);
+   if(version)btn.addEventListener('click',()=>showTestPreview(version));
+   else{btn.disabled=true;btn.title='HTML V1 파일을 등록하면 실행할 수 있습니다.'}
+   testItems.append(btn);drawn.add(blockKey);
+  }
+  for(const item of c.data||[])addTestCard(item.block_key,latest.get(item.block_key));
+  for(const version of stagedVersions)if(!drawn.has(version.block_key))addTestCard(version.block_key,version);
+  if(!testItems.children.length){
+   const p=document.createElement('p');p.style.cssText='font-size:12px;color:#778879';
+   p.textContent='등록된 테스트 블록이 없습니다.';testItems.append(p);
+  }
  }
  LIVE_ID('jinil-test-refresh').addEventListener('click',()=>{
    refreshTestBlocks().catch(e=>{testItems.textContent='테스트 블록 조회 실패: '+e.message;testPanel.hidden=false});
@@ -3313,6 +3359,7 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
   syncAuth();render();
   if(jinilLiveRole==='super_admin')await refreshTestBlocks();
   else clearTestBlocks();
+  await refreshReleasedOther();
   const roleName=jinilLiveRole==='super_admin'?'슈퍼관리자':jinilLiveRole==='admin'?'관리자':'일반회원';
   LIVE_ID('currentAccount').textContent=u.email+' · '+roleName;
   console.info('[진일 V72] Supabase 인증 확인:',roleName);
@@ -3330,7 +3377,7 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
   LIVE_ID('logoutBtn').onclick=async()=>{
    await liveClient.auth.signOut();
    jinilLiveRole='';jinilLiveDepartment='';loggedEmail='';
-   clearTestBlocks();
+   clearTestBlocks();releasedItems.replaceChildren();releasedPanel.hidden=true;
    document.body.classList.remove('jinil-live-authorized');gate.hidden=false;
    LIVE_ID('jinil-live-password').value='';LIVE_ID('jinil-verified-role')?.remove();syncAuth();msg('로그아웃했습니다.');
   };
