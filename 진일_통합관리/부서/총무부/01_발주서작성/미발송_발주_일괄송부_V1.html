@@ -29,7 +29,7 @@ button{background:#28563e;color:white;cursor:pointer}button:disabled{opacity:.5;
 <small>일부만 성공하면 즉시 중단하고 서버 목록을 다시 조회합니다. 송부 완료 여부 확인 전에는 재실행하지 마세요.</small></section>
 <pre id="message" role="status">연결 대기 중</pre>
 <script type="module">
-import {sendOrder,canonicalDepartment} from '../../../common/../../../integration/jinil-supabase-orders-adapter-v1.js';
+import {sendOrder,canonicalDepartment} from '../../../../integration/jinil-supabase-orders-adapter-v1.js';
 const $=id=>document.getElementById(id);
 const log=s=>$('message').textContent=s;
 let sb=null,profile=null,rows=[],busy=false,complete=false;
