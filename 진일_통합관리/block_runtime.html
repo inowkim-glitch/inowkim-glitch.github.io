@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JINIL V72 · 블록 실행</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:"Malgun Gothic",system-ui,sans-serif;color:#203b2d;background:#f4f7f5}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 18px;background:#194b30;color:white}
+header a{color:#e2ffea;text-decoration:underline}header strong{font-size:15px}
+main{padding:16px;max-width:1140px;margin:0 auto}.panel{background:white;padding:14px 18px;border:1px solid #dae4dc;border-radius:12px;margin-bottom:10px}
+#frame{border:1px solid #b9cbbe;background:white;width:100%;height:calc(100vh - 170px);min-height:550px;border-radius:8px}
+#frame[hidden]{display:none}.warn{color:#99500c}button{cursor:pointer;border:1px solid #b4c7b7;background:#e7f2e8;padding:8px 12px;border-radius:7px}
+</style></head>
+<body><header><strong>JINIL · V72 블록 실행</strong><a href="./index.html">작업공간 돌아가기</a><button id="check" type="button">업데이트 확인</button><small id="version"></small></header>
+<main><div class="panel"><div id="status" role="status">권한과 배포 상태를 확인하고 있습니다.</div><div id="changed" hidden class="warn">새 배포 버전이 확인됐습니다. <button id="reload" type="button">새 버전 열기</button></div></div>
+<iframe id="frame" hidden title="승인된 HTML 블록 실행" referrerpolicy="same-origin" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads"></iframe>
+</main>
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
+const $=id=>document.getElementById(id);
+const BLOCKS=new Set(["부서/총무부/01_발주서작성/01_발주서작성_V1.html","부서/총무부/02_발주목록확인/02_발주목록확인_V1.html","부서/총무부/03_발주목록검색/03_발주목록검색_V1.html","부서/총무부/04_업체목록확인/04_업체목록확인_V1.html","부서/총무부/05_소재등록/05_소재등록_V1.html","부서/총무부/06_생산부재고확인/06_생산부재고확인_V1.html","부서/총무부/07_테프론재고확인/07_테프론재고확인_V1.html","부서/총무부/08_납품예정달력/08_납품예정달력_V1.html","부서/총무부/09_소재발주_확인/09_소재발주_확인_V1.html","부서/테프론부/01_발주목록확인/01_발주목록확인_V1.html","부서/테프론부/02_발주목록검색/02_발주목록검색_V1.html","부서/테프론부/03_재고확인/03_재고확인_V1.html","부서/테프론부/04_생산부재고확인/04_생산부재고확인_V1.html","부서/테프론부/05_테프론재고확인/05_테프론재고확인_V1.html","부서/테프론부/06_납품예정달력/06_납품예정달력_V1.html","부서/테프론부/07_소재발주_확인/07_소재발주_확인_V1.html","부서/가공부/01_소재발주_확인/01_소재발주_확인_V1.html","부서/가공부/02_입고확인/02_입고확인_V1.html","부서/가공부/03_발주목록확인/03_발주목록확인_V1.html","부서/가공부/04_발주목록검색/04_발주목록검색_V1.html","부서/가공부/05_납품예정달력/05_납품예정달력_V1.html","부서/생산부/01_발주목록확인/01_발주목록확인_V1.html","부서/생산부/02_발주목록검색/02_발주목록검색_V1.html","부서/생산부/03_생산부재고확인/03_생산부재고확인_V1.html","부서/생산부/04_납품예정달력/04_납품예정달력_V1.html","부서/생산부/05_소재발주_확인/05_소재발주_확인_V1.html","기타블록/01_CAD3D생성블록/01_CAD3D생성블록_V1.html","기타블록/02_메모블록/02_메모블록_V1.html","기타블록/03_캡처블록/03_캡처블록_V1.html"]);
+const raw=new URLSearchParams(location.search).get('block')||'';
+let db=null,versionId=null,checking=false;
+function fail(e){$('status').textContent='실행할 수 없습니다: '+(e?.message||String(e));$('frame').hidden=true}
+function abs(path){return new URL('./'+path,new URL('./',location.href)).href}
+function renderVersion(html,path,number){
+ if(!/<html\b/i.test(html))throw Error('등록된 HTML 형식을 확인해 주세요.');
+ // 등록 파일의 CSS / JS 상대 경로는 원래 29개 화면의 폴더 기준으로 해석합니다.
+ const base=new URL('./',abs(path)).href;
+ const tag='<base href="'+base.replaceAll('&','&amp;').replaceAll('"','&quot;')+'">';
+ const source=/<head[^>]*>/i.test(html)?html.replace(/<head[^>]*>/i,m=>m+tag):tag+html;
+ const frame=$('frame');frame.srcdoc=source;frame.hidden=false;
+ $('version').textContent='현재 승인 버전 V'+number;
+ $('status').textContent='Supabase에서 승인된 HTML V'+number+'을 불러왔습니다. 작업 화면의 저장은 각 업무 서버 정책을 따릅니다.';
+}
+async function session(){
+ let config={};try{config=JSON.parse(localStorage.getItem('jinil_config')||'{}')}catch{}
+ if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(config.url||'')||!config.key)
+ throw Error('작업공간에서 먼저 Supabase 로그인을 진행해 주세요.');
+ db=createClient(config.url,config.key);
+ const {data,error}=await db.auth.getUser();if(error)throw error;if(!data?.user)throw Error('로그인 세션이 없습니다. 작업공간에서 로그인해 주세요.');
+ const allowed=await db.rpc('jinil_can_view_block',{block_path:raw});
+ if(allowed.error)throw allowed.error;
+ if(allowed.data!==true)throw Error('슈퍼관리자가 허용한 블록이 아니거나 소속 부서가 다릅니다.');
+}
+async function release(){
+ const r=await db.from('jinil_block_releases').select('version_id').eq('block_key',raw).maybeSingle();
+ if(r.error)throw r.error;
+ return r.data?.version_id||null;
+}
+async function start(){
+ try{
+  if(!BLOCKS.has(raw))throw Error('등록되지 않은 블록 주소입니다.');
+  await session();
+  const current=await release();
+  if(!current){
+    $('status').textContent='등록된 신규 배포 버전이 없어 기존 HTML 화면으로 이동합니다.';
+    location.replace(abs(raw));return;
+  }
+  const v=await db.from('jinil_block_versions').select('id,block_key,html_source,version_no,state').eq('id',current).eq('block_key',raw).single();
+  if(v.error)throw v.error;if(!v.data||v.data.state!=='tested')throw Error('승인되지 않은 배포 버전입니다.');
+  versionId=v.data.id;renderVersion(v.data.html_source,raw,v.data.version_no);
+ }catch(e){fail(e)}
+}
+async function check(){
+ if(checking||!db||!versionId)return;checking=true;
+ try{
+  const next=await release();if(next!==versionId){$('changed').hidden=false;$('status').textContent='슈퍼관리자가 배포 버전을 변경했습니다. 현재 작업을 저장하고 새 버전을 열어 주세요.';}
+ }catch(e){fail(e)}finally{checking=false}
+}
+$('check').onclick=check;
+$('reload').onclick=()=>location.reload();
+start();
+setInterval(check,60000);
+</script></body></html>
