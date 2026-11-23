@@ -77,7 +77,7 @@ function display(){
  $('who').textContent=allowed?'소속 '+profile.department+' | 권한 '+profile.role:'로그인 전';
  const isSuper=profile?.role==='super_admin',isGeneral=profile?.role==='staff'&&canonicalDepartment(profile?.department)==='총무부';
  block('create',!allowed||(!isSuper&&!isGeneral));
- block('send',!order||(!isSuper&&!isGeneral);
+ block('send',!order||(!isSuper&&!isGeneral));
  block('reload',!allowed);
  const mine=canonicalDepartment(profile?.department);
  if(profile?.role==='admin'&&monitorDepartment){$('department').value=monitorDepartment;$('department').disabled=true;}
