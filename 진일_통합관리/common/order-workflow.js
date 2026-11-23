@@ -56,7 +56,7 @@ async function authorize(user){
   if(!allowed.data)throw Error('슈퍼관리자가 이 블록의 조회 권한을 부여하지 않았습니다.');
   const m=key.match(/^부서\/([^/]+)\//);
   if(!m)throw Error('관리자 부서 경로 오류');
-  monitorDepartment=m[1];
+  monitorDepartment=m[1]==='총무부'?'*':m[1];
  }
  display();await refresh();
  unsubscribe?.();
@@ -67,7 +67,7 @@ function subscribeToSelectedDepartment(){
  unsubscribe?.();
  const mine=canonicalDepartment(profile.department);
  const viewing=$('department').value;
- if(profile.role==='admin'&&monitorDepartment!==viewing)return;
+ if(profile.role==='admin'&&monitorDepartment!=='*'&&monitorDepartment!==viewing)return;
  if(mine!=='총무부'&&profile.role!=='admin'&&profile.role!=='super_admin'&&mine!==viewing)return;
  unsubscribe=watchDepartmentQueue(sb,{department:viewing,onChange:refresh});
 }
@@ -80,7 +80,7 @@ function display(){
  block('send',!order||(!isSuper&&!isGeneral));
  block('reload',!allowed);
  const mine=canonicalDepartment(profile?.department);
- if(profile?.role==='admin'&&monitorDepartment){$('department').value=monitorDepartment;$('department').disabled=true;}
+ if(profile?.role==='admin'&&monitorDepartment&&monitorDepartment!=='*'){$('department').value=monitorDepartment;$('department').disabled=true;}
  else if(['생산부','테프론부','가공부'].includes(mine) && !isSuper){$('department').value=mine; $('department').disabled=true;}
  else $('department').disabled=false;
 }
@@ -110,7 +110,7 @@ async function refresh(){
  try{
   const department=$('department').value;
   const mine=canonicalDepartment(profile.department);
-  if(profile.role==='admin'&&department!==monitorDepartment)throw Error('이 블록에 부여되지 않은 부서입니다.');
+  if(profile.role==='admin'&&monitorDepartment!=='*'&&department!==monitorDepartment)throw Error('이 블록에 부여되지 않은 부서입니다.');
   if(!['admin','super_admin'].includes(profile.role)&&mine!=='총무부'&&mine!==department)throw Error('다른 부서 조회 권한이 없습니다.');
   const list=await loadDepartmentQueue(sb,{department});
   $('records').replaceChildren();
