@@ -1,1 +1,105 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>진일 가공부 발주목록검색</title><link rel="stylesheet" href="../../../department.css"></head><body><main><h1>가공부 · 발주목록검색</h1><p>V72 분리 작업용 경로입니다. 원본 기능 코드 이식 전이며, 실제 업무 처리는 아직 연결되지 않았습니다.</p><a href="../../../index.html">메인으로</a></main></body></html>
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>진일 V72 | 가공부 발주목록검색</title><link rel="stylesheet" href="../../../department.css">
+<style>
+main{max-width:1200px;margin:24px auto;padding:24px;background:#fff;border-radius:18px;border:1px solid #dbe6db}
+h1{margin:4px 0 14px;font-size:25px}h2{font-size:18px}
+.auth,.filters{display:flex;gap:9px;flex-wrap:wrap;align-items:end}
+label{font-size:12px;display:flex;flex-direction:column;gap:5px}
+input,button{padding:10px;border:1px solid #b8cbb9;border-radius:9px;font:inherit}
+input{min-width:155px;max-width:100%}button{background:#24523d;color:white;cursor:pointer}
+.columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.order-column{height:535px!important;min-height:535px!important;max-height:535px!important}
+.order-row{display:block;white-space:normal;overflow-wrap:anywhere;cursor:default;margin-bottom:8px}
+small{color:#6d8171}.notice{padding:12px;border:1px solid #dfcfab;background:#fff9ec;border-radius:9px}
+@media(max-width:650px){main{padding:11px;margin:8px}.columns{gap:4px}.order-column{padding:5px}.order-row{font-size:11px;min-height:0;padding:7px 5px}.order-column-head{font-size:11px}}
+</style></head><body><main><a href="../../../index.html">WORKSPACE</a>
+<h1>가공부 · 발주목록검색</h1>
+<p class="notice">서버에서 송부된 발주만 조회합니다. 미발송 발주서는 부서별 조회에 노출하지 않습니다. V72 디자인·기능 전체 이식은 진행 중이며, 이 파일은 부서별 읽기·검색 화면입니다.</p>
+<section><h2>Supabase 로그인</h2><div class="auth">
+<label>프로젝트 URL<input id="url" type="url" placeholder="https://xxxx.supabase.co"></label>
+<label>공개용 키<input id="key" placeholder="anon/publishable"></label>
+<label>이메일<input id="email" type="email" autocomplete="username"></label>
+<label>비밀번호<input id="password" type="password" autocomplete="current-password"></label>
+<button id="login">연결·로그인</button><button id="logout" type="button">로그아웃</button></div>
+<p id="identity">연결 대기</p></section>
+<section hidden id="workspace"><h2>발주 검색</h2><div class="filters">
+<label>업체명·발주번호·품목<input id="query" type="search" placeholder="검색어 입력"></label>
+<label>발송 시작일<input id="start" type="date"></label>
+<label>발송 종료일<input id="end" type="date"></label>
+<button id="refresh">서버 조회</button></div>
+<p id="counts" role="status"></p>
+<div class="columns" id="columns"></div></section>
+<p id="status" role="status">로그인 후 서버 발주 목록을 조회합니다.</p>
+<script type="module">
+const FIXED_DEPT="가공부";
+const $=id=>document.getElementById(id),cfgKey='jinil_config',canonical=v=>({'본사 총무':'총무부','생산동':'생산부','가공동':'가공부','teflon':'테프론부'}[v]||v);
+let sb=null,profile=null,orders=[],channel=null,interval=null;
+const notify=s=>{$('status').textContent=s;};
+const valid=config=>/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(config.url)&&!!config.key;
+const normalize=s=>String(s??'').normalize('NFKC').toLocaleLowerCase('ko-KR').replace(/\s+/g,' ').trim();
+function render(){
+ const query=normalize($('query').value),start=$('start').value,end=$('end').value;
+ const filtered=orders.filter(x=>{
+  const date=String(x.sent_at||'').slice(0,10);
+  if(start&&date<start||end&&date>end)return false;
+  return !query||normalize([x.order_summary?.order_no,x.order_summary?.company,x.order_summary?.item,x.order_summary?.quantity,x.order_id].join(' ')).includes(query);
+ });
+ const root=$('columns');root.replaceChildren();
+ for(const status of ['대기','확인','완료']){
+  const column=document.createElement('div');column.className='order-column';
+  const title=document.createElement('div');title.className='order-column-head';title.textContent=status+' ('+filtered.filter(x=>x.status===status).length+')';
+  const body=document.createElement('div');body.className='order-column-body';
+  for(const x of filtered.filter(x=>x.status===status)){
+   const entry=document.createElement('div');entry.className='order-row';entry.dataset.status=status==='대기'?'waiting':status==='확인'?'checked':'done';
+   const bold=document.createElement('strong');bold.textContent=x.order_summary?.company||'업체명 미기재';
+   const no=document.createElement('div');no.textContent='발주 '+(x.order_summary?.order_no||x.order_id);
+   const item=document.createElement('small');item.textContent=[x.order_summary?.item,x.order_summary?.quantity].filter(Boolean).join(' · ');
+   entry.append(bold,no,item);body.append(entry);
+  }
+  if(!body.children.length){const empty=document.createElement('p');empty.className='order-empty';empty.textContent='해당 발주 없음';body.append(empty)}
+  column.append(title,body);root.append(column);
+ }
+ $('counts').textContent='서버에서 조회한 '+orders.length+'건 중 '+filtered.length+'건 표시';
+}
+async function refresh(){
+ if(!sb||!profile)return;
+ try{
+  const {data,error}=await sb.from('jinil_dispatches').select('id,order_id,department,status,sent_at,order_summary')
+    .eq('department',FIXED_DEPT).order('sent_at',{ascending:false}).limit(1000);
+  if(error)throw error;orders=data||[];render();
+  notify('조회 완료 · '+new Date().toLocaleTimeString('ko-KR')+' (서버 조회 기준)');
+ }catch(e){notify('발주 조회 실패: '+e.message)}
+}
+async function connect(){
+ try{
+  const config={url:$('url').value.trim(),key:$('key').value.trim()};
+  if(!valid(config))throw Error('프로젝트 URL 및 공개용 키가 필요합니다.');
+  if(channel)await sb.removeChannel(channel);
+  const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
+  sb=createClient(config.url,config.key);
+  let u=await sb.auth.getUser();
+  if(!u.data.user){
+   const signed=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
+   if(signed.error)throw signed.error;u=await sb.auth.getUser();
+  }
+  if(!u.data?.user)throw Error('로그인이 필요합니다.');
+  const p=await sb.from('profiles').select('department,role').eq('id',u.data.user.id).single();
+  if(p.error)throw p.error;profile=p.data;
+  const allowed=['admin','supervisor'].includes(profile.role)||['총무부',FIXED_DEPT].includes(canonical(profile.department));
+  if(!allowed){await sb.auth.signOut();profile=null;throw Error('해당 부서 조회 권한이 없습니다.')}
+  localStorage.setItem(cfgKey,JSON.stringify(config));
+  $('workspace').hidden=false;$('identity').textContent='로그인: '+profile.department+' / '+profile.role;
+  await refresh();
+  channel=sb.channel('v72-order-search-'+FIXED_DEPT+'-'+crypto.randomUUID())
+    .on('postgres_changes',{event:'*',schema:'public',table:'jinil_dispatches',filter:'department=eq.'+FIXED_DEPT},refresh).subscribe();
+  if(interval)clearInterval(interval);interval=setInterval(refresh,60000);
+ }catch(e){notify('접속 오류: '+e.message)}
+}
+$('login').onclick=connect;
+$('refresh').onclick=refresh;
+for(const id of ['query','start','end'])$(id).addEventListener('input',render);
+$('logout').onclick=async()=>{if(interval)clearInterval(interval);if(channel&&sb)await sb.removeChannel(channel);await sb?.auth?.signOut();profile=null;orders=[];$('workspace').hidden=true;$('identity').textContent='로그아웃됨';notify('로그아웃했습니다.')};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&profile)refresh()});
+try{const saved=JSON.parse(localStorage.getItem(cfgKey)||'{}');$('url').value=saved.url||'';$('key').value=saved.key||'';}catch{}
+</script></main></body></html>
