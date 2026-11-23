@@ -3246,7 +3246,7 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
  const nameFromPath=key=>{
    const parts=String(key||'').split('/');
    const folder=parts[parts.length-2]||parts[parts.length-1]||'블록';
-   return folder.replace(/^\\d+_/,'').replaceAll('_',' ');
+   return folder.replace(/^\d+_/,'').replaceAll('_',' ');
  };
  function closeTest(){viewer.hidden=true;frame.removeAttribute('srcdoc')}
  LIVE_ID('jinil-test-close').addEventListener('click',closeTest);
