@@ -22,6 +22,12 @@ h2{margin:0 0 18px;font-size:20px}
 .workspace-dept,.workspace-extra{display:none}
 #extraConfig{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
 .layout-item{display:inline-flex;align-items:center;gap:6px;font-size:12px;border:1px solid #e1ebe2;border-radius:9px;padding:5px}
+ 
+#extrasGrid .tile.wide{grid-column:span 2}
+#extrasGrid .tile.folded{min-height:72px;gap:4px;justify-content:center}
+#extrasGrid .tile.folded .state,#extrasGrid .tile.folded small{display:none}
+.layout-item button:focus-visible{outline:2px solid #20513c}
+@media(max-width:460px){#extrasGrid .tile.wide{grid-column:span 2}}
 </style></head><body><header><b>JINIL · WORKSPACE</b><small>V72 기능 분리·연동 작업 브랜치</small></header><main><section class="member-login"><h2>회원 로그인 및 개인 화면 설정</h2>
 <div class="member-grid"><label>Supabase URL<input id="wsURL" placeholder="https://project.supabase.co"></label>
 <label>공개용 키<input id="wsKey"></label><label>이메일<input id="wsEmail" type="email" autocomplete="username"></label>
@@ -34,7 +40,7 @@ h2{margin:0 0 18px;font-size:20px}
 const $=id=>document.getElementById(id),canon=v=>({'본사 총무':'총무부','생산동':'생산부','가공동':'가공부','테프론동':'테프론부'}[v]||v);
 const departments=[...document.querySelectorAll('.workspace-dept')],exSection=document.querySelector('.workspace-extra'),grid=$('extrasGrid');
 const items=[...grid.querySelectorAll('a.tile')].map(node=>({key:node.getAttribute('href').split('/')[1],node}));
-const original=items.map(x=>x.key);let current=[...original],enabled=Object.fromEntries(original.map(k=>[k,true])),sb=null,profile=null,userId=null;
+const original=items.map(x=>x.key);let current=[...original],enabled=Object.fromEntries(original.map(k=>[k,true])),sizes={},sb=null,profile=null,userId=null;
 const say=s=>$('wsStatus').textContent=s;
 try{const c=JSON.parse(localStorage.getItem('jinil_config')||'{}');$('wsURL').value=c.url||'';$('wsKey').value=c.key||''}catch{}
 function hide(){departments.forEach(x=>x.style.display='none');exSection.style.display='none';$('extraConfig').replaceChildren();profile=null;userId=null}
@@ -44,7 +50,12 @@ function draw(){
  exSection.style.display=profile?'block':'none';if(!profile)return;
  const names=new Map(items.map(x=>[x.key,x.node]));
  current=[...new Set([...current,...original])].filter(k=>names.has(k));
- for(const k of current){const node=names.get(k);grid.append(node);node.style.display=enabled[k]===false?'none':'flex'}
+ for(const k of current){
+  const node=names.get(k);grid.append(node);node.style.display=enabled[k]===false?'none':'flex';
+  node.classList.toggle('wide',sizes[k]?.wide===true);
+  node.classList.toggle('folded',sizes[k]?.collapsed===true);
+  node.setAttribute('aria-label',k.slice(3)+(sizes[k]?.collapsed?' 접힘':' 펼침'));
+ }
  const settings=$('extraConfig');settings.replaceChildren();
  for(const k of current){
   const group=document.createElement('span');group.className='layout-item';
@@ -52,7 +63,14 @@ function draw(){
   const label=document.createElement('span');label.textContent=k.slice(3);
   const left=document.createElement('button'),right=document.createElement('button');
   left.textContent='↑';right.textContent='↓';left.onclick=()=>move(k,-1);right.onclick=()=>move(k,1);
-  group.append(box,label,left,right);settings.append(group);
+  const collapse=document.createElement('button'),width=document.createElement('button');
+  collapse.type='button';collapse.textContent=sizes[k]?.collapsed?'펼치기':'접기';
+  collapse.setAttribute('aria-label',k+' '+collapse.textContent);
+  collapse.onclick=()=>{sizes[k]={...sizes[k],collapsed:!sizes[k]?.collapsed};draw()};
+  width.type='button';width.textContent=sizes[k]?.wide?'기본 폭':'넓게';
+  width.setAttribute('aria-label',k+' '+width.textContent);
+  width.onclick=()=>{sizes[k]={...sizes[k],wide:!sizes[k]?.wide};draw()};
+  group.append(box,label,left,right,collapse,width);settings.append(group);
  }
 }
 function move(k,d){const a=current.indexOf(k),b=a+d;if(b<0||b>=current.length)return;[current[a],current[b]]=[current[b],current[a]];draw()}
@@ -67,9 +85,10 @@ async function login(){
   if(!user)throw Error('회원 인증 실패');
   const p=await sb.from('profiles').select('department,role').eq('id',user.id).single();
   if(p.error||!p.data)throw Error('회원 프로필 조회 실패: '+(p.error?.message||''));profile=p.data;userId=user.id;
-  const l=await sb.from('jinil_user_layout').select('extras,tile_order').eq('user_id',userId).maybeSingle();
+  const l=await sb.from('jinil_user_layout').select('extras,tile_order,expanded').eq('user_id',userId).maybeSingle();
   if(l.error)throw l.error;
   enabled={...Object.fromEntries(original.map(k=>[k,true])),...(l.data?.extras||{})};
+  sizes=l.data?.expanded&&typeof l.data.expanded==='object'&&!Array.isArray(l.data.expanded)?l.data.expanded:{};
   current=Array.isArray(l.data?.tile_order)?[...l.data.tile_order]:[...original];draw();
   localStorage.setItem('jinil_config',JSON.stringify({url,key}));
   say('로그인 '+profile.department+' / '+profile.role+' · 내 화면 설정 '+(l.data?'복원':'기본값'));
@@ -77,8 +96,8 @@ async function login(){
 }
 async function save(){
  if(!sb||!userId)return say('로그인이 필요합니다.');
- try{const r=await sb.from('jinil_user_layout').upsert({user_id:userId,extras:enabled,tile_order:current},{onConflict:'user_id'});
- if(r.error)throw r.error;say('개인 블록 표시/순서 Supabase 저장 완료')}
+ try{const r=await sb.from('jinil_user_layout').upsert({user_id:userId,extras:enabled,tile_order:current,expanded:sizes},{onConflict:'user_id'});
+ if(r.error)throw r.error;say('개인 블록 표시·순서·크기·접힘 설정 Supabase 저장 완료')}
  catch(e){say('저장 오류: '+e.message)}
 }
 $('wsLogin').onclick=login;$('wsSave').onclick=save;
