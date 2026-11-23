@@ -2,6 +2,7 @@
 // 기존 V72 원본은 그대로 보존하며, 이 화면은 Supabase의 실제 테이블을 사용합니다.
 import {createOrder,sendOrder,loadDepartmentQueue,transitionOrder,watchDepartmentQueue,canonicalDepartment} from '../../integration/jinil-supabase-orders-adapter-v1.js';
 const CLIENT_URL='https://esm.sh/@supabase/supabase-js@2';
+// 앱 공통 연결 설정. 각 기기에서 직접 연결 후 서버 공유 데이터를 읽습니다.
 const $=(id)=>document.getElementById(id);
 let sb=null,profile=null,order=null,unsubscribe=null,inFlight=false;
 const info=t=>{$('result').textContent=t;};
@@ -19,7 +20,7 @@ async function init(){
  $('create').onclick=create;
  $('send').onclick=send;
  $('reload').onclick=refresh;
- $('department').onchange=refresh;
+ $('department').onchange=()=>{subscribeToSelectedDepartment();refresh();};
  $('logout').onclick=async()=>{unsubscribe?.();await sb?.auth?.signOut();profile=null;display();info('로그아웃했습니다.')};
  if(conf.url&&conf.key)await prepareClient(conf);
  setInterval(()=>{if(profile)refresh()},60000);
@@ -47,18 +48,27 @@ async function authorize(user){
  if(error||!data)throw Error('회원 프로필을 찾을 수 없습니다: '+(error?.message||''));
  profile=data;display();await refresh();
  unsubscribe?.();
- unsubscribe=watchDepartmentQueue(sb,{department:$('department').value,onChange:refresh});
+ subscribeToSelectedDepartment();
+}
+function subscribeToSelectedDepartment(){
+ if(!sb||!profile)return;
+ unsubscribe?.();
+ const mine=canonicalDepartment(profile.department);
+ const viewing=$('department').value;
+ if(mine!=='총무부'&&profile.role!=='admin'&&profile.role!=='supervisor'&&mine!==viewing)return;
+ unsubscribe=watchDepartmentQueue(sb,{department:viewing,onChange:refresh});
 }
 function display(){
  const allowed=!!profile;
  $('editor').hidden=!allowed;
  $('who').textContent=allowed?'소속 '+profile.department+' | 권한 '+profile.role:'로그인 전';
- const isAdmin=profile?.role==='admin',isGeneral=canonicalDepartment(profile?.department)==='총무부';
+ const isAdmin=['admin','supervisor'].includes(profile?.role),isGeneral=canonicalDepartment(profile?.department)==='총무부';
  block('create',!allowed||(!isAdmin&&!isGeneral));
  block('send',!order||(!isAdmin&&!isGeneral));
  block('reload',!allowed);
  const mine=canonicalDepartment(profile?.department);
- if(['생산부','테프론부','가공부'].includes(mine))$('department').value=mine;
+ if(['생산부','테프론부','가공부'].includes(mine) && !isAdmin){$('department').value=mine; $('department').disabled=true;}
+ else $('department').disabled=false;
 }
 async function create(){
  if(inFlight)return;inFlight=true;block('create',true);
@@ -85,6 +95,8 @@ async function refresh(){
  if(!profile||inFlight)return;
  try{
   const department=$('department').value;
+  const mine=canonicalDepartment(profile.department);
+  if(!['admin','supervisor'].includes(profile.role)&&mine!=='총무부'&&mine!==department)throw Error('다른 부서 조회 권한이 없습니다.');
   const list=await loadDepartmentQueue(sb,{department});
   $('records').replaceChildren();
   if(!list.length)$('records').textContent='조회 가능한 발주가 없습니다.';
@@ -94,7 +106,7 @@ async function refresh(){
    header.textContent=[item.order_summary?.order_no||item.order_id,item.order_summary?.company||'',item.status].join(' / ');
    box.append(header);
    const buttonText=item.status==='대기'?'확인':item.status==='확인'?'완료':null;
-   if(buttonText){
+   if(buttonText && (['admin','supervisor'].includes(profile.role)||mine===department)){
     const btn=document.createElement('button');btn.textContent=buttonText;btn.onclick=async()=>{
      btn.disabled=true;
      try{await transitionOrder(sb,{dispatchId:item.id,expectedStatus:item.status,nextStatus:buttonText});await refresh();info('처리 성공: '+buttonText)}
