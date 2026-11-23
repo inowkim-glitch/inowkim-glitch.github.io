@@ -5,7 +5,7 @@
  * All errors are propagated. No credentials stored here.
  */
 import { prepareDepartmentDispatch } from './jinil-order-dispatch-v1.js';
-const DEPARTMENT_ALIAS = {'본사 총무':'총무부','가공동':'가공부','생산동':'생산부'};
+const DEPARTMENT_ALIAS = {'본사 총무':'총무부','가공동':'가공부','생산동':'생산부',MC:'생산부',mc:'생산부',teflon:'테프론부',process:'가공부'};
 export function canonicalDepartment(value) { return DEPARTMENT_ALIAS[value] || value; }
 async function userId(sb) {
   if (!sb?.auth?.getUser || !sb?.from) throw new Error('Supabase 연결을 확인하세요.');
