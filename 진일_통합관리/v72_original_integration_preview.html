@@ -3239,6 +3239,10 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
  const msg=t=>{message.textContent=t};
  try{const config=JSON.parse(localStorage.getItem('jinil_config')||'{}');LIVE_ID('jinil-live-url').value=config.url||'';/* Use project-verified publishable key, not cached browser input. */}catch{}
  const normalize=v=>({'본사 총무':'총무부','생산동':'생산부','가공동':'가공부','테프론동':'테프론부'}[v]||v||'');
+function jinilWheelHtml(html){
+ const script='<script src="'+new URL('./common/pointer-wheel.js',location.href).href+'"><'+'/script>';
+ return /<\/body\s*>/i.test(html)?html.replace(/<\/body\s*>/i,script+'</body>'):html+script;
+}
  const testPanel=LIVE_ID('jinil-test-blocks'),testItems=LIVE_ID('jinil-test-items');
  const viewer=LIVE_ID('jinil-test-viewer'),frame=LIVE_ID('jinil-test-frame');
  const releasedPanel=LIVE_ID('jinil-live-other-blocks'),releasedItems=LIVE_ID('jinil-live-other-items');
@@ -3256,7 +3260,7 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
  function openOtherReleased(version,label){
   if(!document.body.classList.contains('jinil-live-authorized'))return;
   LIVE_ID('jinil-test-heading').textContent='기타블록 · '+label+' · 배포 버전 V'+version.version_no;
-  frame.srcdoc=version.html_source;viewer.hidden=false;LIVE_ID('jinil-test-close').focus();
+  frame.srcdoc=jinilWheelHtml(version.html_source);viewer.hidden=false;LIVE_ID('jinil-test-close').focus();
  }
  async function refreshReleasedOther(){
   releasedItems.replaceChildren();releasedPanel.hidden=true;
