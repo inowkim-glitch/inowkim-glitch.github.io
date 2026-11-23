@@ -33,7 +33,40 @@ button:disabled{opacity:.45}
 </section>
 <section><h2>부서별 발주 대기·확인·완료</h2><label>대상 부서<select id="department">
 <option value="생산부">생산부</option><option value="테프론부">테프론부</option><option value="가공부">가공부</option></select></label>
-<button id="reload">서버에서 새로고침</button><span id="lastSync"></span><div id="records"></div>
+<button id="reload">서버에서 새로고침</button><span id="lastSync"></span><div style="margin:14px 0"><label for="orderSearch">발주목록 검색 (업체명·발주번호·품목)</label><input id="orderSearch" type="search" placeholder="검색어 입력 시 현재 조회된 목록에서 필터" autocomplete="off"><small id="searchCount" role="status" style="display:block;color:#617568;margin-top:6px">조회 후 검색할 수 있습니다.</small></div><div id="records"></div>
 </section></div>
 <pre id="result" role="status">연결 대기 중</pre>
-</main><script type="module" src="../../../common/order-workflow.js"></script></body></html>
+</main>
+<script>
+/* 화면에 이미 표시된 발주 기록만 필터링합니다. 서버 데이터·권한은 변경하지 않습니다. */
+(() => {
+  const input = document.getElementById('orderSearch');
+  const container = document.getElementById('records');
+  const count = document.getElementById('searchCount');
+  const normalize = (s) => String(s || '').normalize('NFKC').toLocaleLowerCase('ko-KR').replace(/\s+/g, ' ').trim();
+  let scheduled = false;
+  function applyFilter() {
+    scheduled = false;
+    const query = normalize(input.value);
+    const items = Array.from(container.querySelectorAll('.record'));
+    let visible = 0;
+    for (const item of items) {
+      const matches = !query || normalize(item.textContent).includes(query);
+      item.hidden = !matches;
+      item.style.display = matches ? '' : 'none';
+      if (matches) visible++;
+    }
+    count.textContent = items.length ? `조회된 ${items.length}건 중 ${visible}건 표시 (현재 화면 기준)` : '현재 화면에 조회된 발주가 없습니다.';
+  }
+  function schedule() {
+    if (scheduled) return;
+    scheduled = true;
+    queueMicrotask(applyFilter);
+  }
+  input.addEventListener('input', schedule);
+  const observer = new MutationObserver(schedule);
+  observer.observe(container, {childList:true,subtree:true,characterData:true});
+  schedule();
+})();
+</script>
+<script type="module" src="../../../common/order-workflow.js"></script></body></html>
