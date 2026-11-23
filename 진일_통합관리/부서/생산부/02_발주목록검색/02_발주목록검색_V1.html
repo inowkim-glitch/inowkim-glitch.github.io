@@ -34,7 +34,7 @@ small{color:#6d8171}.notice{padding:12px;border:1px solid #dfcfab;background:#ff
 <script type="module">
 const FIXED_DEPT="생산부";
 const $=id=>document.getElementById(id),cfgKey='jinil_config',canonical=v=>({'본사 총무':'총무부','생산동':'생산부','가공동':'가공부','teflon':'테프론부'}[v]||v);
-let sb=null,profile=null,orders=[],channel=null,interval=null;
+let sb=null,profile=null,orders=[],channel=null,interval=null,canMonitor=false;
 const notify=s=>{$('status').textContent=s;};
 const valid=config=>/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(config.url)&&!!config.key;
 const normalize=s=>String(s??'').normalize('NFKC').toLocaleLowerCase('ko-KR').replace(/\s+/g,' ').trim();
@@ -85,8 +85,13 @@ async function connect(){
   }
   if(!u.data?.user)throw Error('로그인이 필요합니다.');
   const p=await sb.from('profiles').select('department,role').eq('id',u.data.user.id).single();
-  if(p.error)throw p.error;profile=p.data;
-  const allowed=['admin','supervisor'].includes(profile.role)||['총무부',FIXED_DEPT].includes(canonical(profile.department));
+  if(p.error)throw p.error;profile=p.data;canMonitor=false;
+  if(profile.role==='admin'){
+   const path=decodeURIComponent(location.pathname),start=path.indexOf('부서/');if(start<0)throw Error('블록 경로 오류');
+   const grant=await sb.from('jinil_block_access').select('block_key').eq('user_id',u.data.user.id).eq('block_key',path.slice(start)).maybeSingle();
+   if(grant.error)throw grant.error;canMonitor=!!grant.data;
+  }
+  const allowed=profile.role==='super_admin'||(profile.role==='admin'?canMonitor:(['총무부',FIXED_DEPT].includes(canonical(profile.department))));
   if(!allowed){await sb.auth.signOut();profile=null;throw Error('해당 부서 조회 권한이 없습니다.')}
   localStorage.setItem(cfgKey,JSON.stringify(config));
   $('workspace').hidden=false;$('identity').textContent='로그인: '+profile.department+' / '+profile.role;
@@ -99,7 +104,7 @@ async function connect(){
 $('login').onclick=connect;
 $('refresh').onclick=refresh;
 for(const id of ['query','start','end'])$(id).addEventListener('input',render);
-$('logout').onclick=async()=>{if(interval)clearInterval(interval);if(channel&&sb)await sb.removeChannel(channel);await sb?.auth?.signOut();profile=null;orders=[];$('workspace').hidden=true;$('identity').textContent='로그아웃됨';notify('로그아웃했습니다.')};
+$('logout').onclick=async()=>{if(interval)clearInterval(interval);if(channel&&sb)await sb.removeChannel(channel);await sb?.auth?.signOut();profile=null;canMonitor=false;orders=[];$('workspace').hidden=true;$('identity').textContent='로그아웃됨';notify('로그아웃했습니다.')};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&profile)refresh()});
 try{const saved=JSON.parse(localStorage.getItem(cfgKey)||'{}');$('url').value=saved.url||'';$('key').value=saved.key||'';}catch{}
 </script></main></body></html>
