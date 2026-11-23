@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>진일 통합 연결 시험 | 발주·부서 대기</title>
+<style>body{font:15px "Malgun Gothic",sans-serif;background:#f3f5f7;color:#25333d;margin:0;padding:18px}main{max-width:1000px;margin:auto}.card{background:white;padding:20px;border-radius:13px;margin:12px 0;border:1px solid #dce4e8}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}input,select,textarea,button{font:inherit;padding:10px;border:1px solid #b7c9d2;border-radius:8px;max-width:100%;box-sizing:border-box}input,textarea{flex:1 1 180px}button{background:#244c60;color:white;cursor:pointer}button:disabled{opacity:.4}table{width:100%;border-collapse:collapse}td,th{text-align:left;border-bottom:1px solid #e2e8eb;padding:8px;vertical-align:top}small{color:#566973}#status{white-space:pre-wrap;padding:10px;background:#e8eff3;border-radius:8px}.scroll{overflow:auto}.card h2{margin:0 0 12px;font-size:19px}.q{background:#ecf2f4;padding:8px;border-radius:8px;margin:8px 0}</style></head>
+<body><main><h1>진일 통합관리 · 서울/화성 연동 시험</h1><p>기존 운영 화면과 분리된 발주서 송부·부서 대기·확인·완료 시험 페이지입니다. 실제 작업용 데이터를 입력하지 마세요.</p>
+<section class="card"><h2>1. Supabase 연결·로그인</h2><div class="row"><input id="url" placeholder="https://프로젝트.supabase.co"><input id="key" placeholder="공개용 publishable/anon 키"></div>
+<div class="row"><input id="email" type="email" placeholder="회원 이메일"><input id="pw" type="password" placeholder="비밀번호"><button id="login">로그인</button><button id="logout">로그아웃</button></div><small id="who">로그인 전</small></section>
+<section class="card"><h2>2. 서울 · 발주 저장 후 일괄 송부</h2>
+<div class="row"><input id="orderNo" placeholder="테스트 발주번호"><input id="company" placeholder="테스트 업체명"><input id="item" placeholder="테스트 품목"><button id="create" disabled>발주 저장</button></div>
+<div class="row"><label><input type="checkbox" class="dept" value="생산부" checked> 생산부</label><label><input type="checkbox" class="dept" value="테프론부"> 테프론부</label><label><input type="checkbox" class="dept" value="가공부"> 가공부</label><button id="send" disabled>선택 부서에 일괄 송부</button></div>
+<small id="created">저장된 발주 없음</small></section>
+<section class="card"><h2>3. 화성 · 부서 수신 및 처리</h2><div class="row"><select id="department"><option>생산부</option><option>테프론부</option><option>가공부</option></select><button id="refresh" disabled>지금 동기화</button><span id="lastSync">동기화 전</span></div><div class="scroll"><table><thead><tr><th>발주</th><th>부서</th><th>상태</th><th>처리</th></tr></thead><tbody id="queue"><tr><td colspan="4">로그인 후 조회</td></tr></tbody></table></div></section>
+<section class="card"><h2>연결 결과</h2><div id="status" role="status">로그인이 필요합니다.</div><small>상태 변경·송부·새로고침 버튼은 즉시 서버 요청. 60초마다 보조 조회, 매일 06~19시 매시 및 22·01·04시에도 예약 조회. 실시간 알림은 Supabase Realtime 게시 설정에 따라 동작합니다.</small></section></main>
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
+const $=id=>document.getElementById(id);
+const config=JSON.parse(localStorage.getItem('jinil_config')||'{}');
+$('url').value=config.url||'';$('key').value=config.key||'';
+$('orderNo').value='TEST-'+Date.now();
+let sb=null,createdId=null,profile=null,channel=null,busy=false,lastSlot='';
+function msg(s){$('status').textContent=s;}
+function ready(){return Boolean(sb&&profile)}
+async function unwrap(q,name){const {data,error}=await q;if(error)throw Error(name+': '+error.message);return data;}
+async function getUser(){if(!sb)throw Error('연결이 필요합니다.');const {data,error}=await sb.auth.getUser();if(error||!data?.user)throw Error('로그인이 필요합니다.');return data.user;}
+async function getProfile(user){
+ return unwrap(sb.from('profiles').select('department,role').eq('id',user.id).single(),'회원 권한 확인 실패');
+}
+function controls(){for(const id of ['create','send','refresh'])$(id).disabled=!ready()||(id==='send'&&!createdId);}
+async function connect(){
+ const url=$('url').value.trim(),key=$('key').value.trim();
+ if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(url)||!key)throw Error('프로젝트 주소와 공개용 키를 확인하세요.');
+ sb=createClient(url,key,{auth:{persistSession:true,autoRefreshToken:true}});
+ // Reuse the existing browser's publishable connection settings.
+ localStorage.setItem('jinil_config',JSON.stringify({url,key}));
+}
+$('login').onclick=async()=>{
+ try{if(!sb)await connect();const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('pw').value});
+ if(error)throw error;const user=await getUser();profile=await getProfile(user);$('pw').value='';
+ $('who').textContent='부서: '+profile.department+' / 권한: '+profile.role;
+ msg('로그인 및 부서 권한 확인 완료');controls();await load();listen();
+ }catch(e){msg('로그인 실패: '+e.message);}
+};
+$('logout').onclick=async()=>{if(channel){await sb.removeChannel(channel);channel=null;}await sb?.auth?.signOut();profile=null;createdId=null;controls();$('who').textContent='로그아웃';msg('로그아웃 완료');};
+$('create').onclick=async()=>{
+ try{const uid=(await getUser()).id;
+ const orderNo=$('orderNo').value.trim(),company=$('company').value.trim(),item=$('item').value.trim();
+ if(!orderNo||!company||!item)throw Error('발주번호·업체·품목을 입력하세요.');
+ const saved=await unwrap(sb.from('jinil_orders').insert({order_no:orderNo,
+ payload:{company,item,source:'진일 통합 연동 시험'},created_by:uid
+ }).select('id,order_no').single(),'발주 저장 실패');
+ createdId=saved.id;$('created').textContent='저장 확인: '+saved.order_no;
+ controls();msg('Supabase 발주 저장 완료: '+saved.order_no);
+ }catch(e){msg(e.message);}
+};
+$('send').onclick=async()=>{
+ try{const uid=(await getUser()).id;
+ const depts=[...document.querySelectorAll('.dept:checked')].map(x=>x.value);
+ if(!createdId||!depts.length)throw Error('발주 저장 후 송부 부서를 선택하세요.');
+ const original=await unwrap(sb.from('jinil_orders').select('order_no,payload').eq('id',createdId).single(),'원본 조회 실패');
+ const rows=depts.map(department=>({order_id:createdId,department,status:'대기',updated_by:uid,
+ order_summary:{order_no:original.order_no,...original.payload}}));
+ const results=await unwrap(sb.from('jinil_dispatches').insert(rows).select('id,department,status'),'발주 송부 실패');
+ if(results?.length!==rows.length)throw Error('송부 확인 건수가 맞지 않습니다.');
+ msg('부서별 송부 완료: '+results.map(x=>x.department+' 대기').join(', '));
+ createdId=null;controls();await load();
+ }catch(e){msg(e.message);}
+};
+async function load(){
+ if(!ready()||busy)return;busy=true;try{
+ const dept=$('department').value;
+ const rows=await unwrap(sb.from('jinil_dispatches')
+ .select('id,department,status,order_summary,sent_at')
+ .eq('department',dept).order('sent_at',{ascending:false}).limit(50),'동기화 실패');
+ const tbody=$('queue');tbody.replaceChildren();
+ if(!rows?.length){const r=tbody.insertRow(),c=r.insertCell();c.colSpan=4;c.textContent='조회된 발주가 없습니다.';}
+ for(const x of rows){
+ const tr=tbody.insertRow();
+ const summary=x.order_summary||{};
+ tr.insertCell().textContent=(summary.order_no||'발주번호 없음')+' / '+(summary.company||'');
+ tr.insertCell().textContent=x.department;
+ tr.insertCell().textContent=x.status;
+ const td=tr.insertCell();
+ const next=x.status==='대기'?'확인':x.status==='확인'?'완료':null;
+ if(next){const b=document.createElement('button');b.textContent=next;b.onclick=()=>transition(x,next);td.append(b);}
+ else td.textContent='처리 완료';
+ }
+ $('lastSync').textContent=new Date().toLocaleTimeString('ko-KR');
+ msg('서버 동기화 완료 · '+dept+' '+rows.length+'건');
+ }catch(e){msg('동기화 오류: '+e.message);}finally{busy=false;}
+}
+async function transition(row,next){
+ try{const uid=(await getUser()).id;
+ const patch={status:next,updated_by:uid};
+ if(next==='확인')patch.confirmed_at=new Date().toISOString();
+ if(next==='완료')patch.completed_at=new Date().toISOString();
+ const result=await unwrap(sb.from('jinil_dispatches').update(patch)
+ .eq('id',row.id).eq('status',row.status).select('id,status'),'상태 변경 실패');
+ if(result?.length!==1)throw Error('다른 사용자와 상태가 달라졌거나 권한이 없습니다.');
+ await load();msg(row.department+' '+next+' 처리 및 서버 저장 완료');
+ }catch(e){msg(e.message);}
+}
+function listen(){if(!sb||!ready())return;if(channel)sb.removeChannel(channel);
+ const dept=$('department').value;
+ channel=sb.channel('jinil-test-'+dept+'-'+Date.now()).on('postgres_changes',
+ {event:'*',schema:'public',table:'jinil_dispatches',filter:'department=eq.'+dept},()=>load()).subscribe();
+}
+$('department').onchange=()=>{load();listen();};
+$('refresh').onclick=()=>load();
+setInterval(()=>{if(ready())load()},60000);
+setInterval(()=>{
+ if(!ready())return;
+ const x=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).filter(v=>v.type!=='literal').map(v=>[v.type,v.value]));
+ const hour=Number(x.hour);const slot=x.year+x.month+x.day+x.hour;
+ if(x.minute==='00'&&(hour>=6&&hour<=19||[22,1,4].includes(hour))&&slot!==lastSlot){lastSlot=slot;load();}
+},15000);
+if(config.url&&config.key)connect().then(async()=>{
+ try{const user=await getUser();profile=await getProfile(user);$('who').textContent='자동 로그인: '+profile.department+'/'+profile.role;controls();await load();listen();}
+ catch{msg('로그인이 필요합니다.');}
+}).catch(e=>msg(e.message));
+</script></body></html>
