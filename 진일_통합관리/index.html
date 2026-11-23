@@ -47,16 +47,19 @@ h2{margin:0 0 18px;font-size:20px}
 const $=id=>document.getElementById(id),canon=v=>({'본사 총무':'총무부','생산동':'생산부','가공동':'가공부','테프론동':'테프론부'}[v]||v);
 const departments=[...document.querySelectorAll('.workspace-dept')],exSection=document.querySelector('.workspace-extra'),grid=$('extrasGrid');
 const items=[...grid.querySelectorAll('a.tile')].map(node=>({key:node.getAttribute('href').split('/')[1],node}));
-const original=items.map(x=>x.key);let current=[...original],enabled=Object.fromEntries(original.map(k=>[k,true])),sizes={},sb=null,profile=null,userId=null;
+const original=items.map(x=>x.key);let current=[...original],enabled=Object.fromEntries(original.map(k=>[k,true])),sizes={},sb=null,profile=null,userId=null,granted=new Set();
 const say=s=>$('wsStatus').textContent=s;
 const layoutMsg=s=>{const el=$('layoutStatus');if(el)el.textContent=s};
 let dragging=null;
 try{const c=JSON.parse(localStorage.getItem('jinil_config')||'{}');$('wsURL').value=c.url||'';$('wsKey').value=c.key||''}catch{}
-function hide(){const sl=$('superAdminLink');if(sl)sl.style.display='none';departments.forEach(x=>x.style.display='none');exSection.style.display='none';$('extraConfig').replaceChildren();profile=null;userId=null}
+function hide(){const sl=$('superAdminLink');if(sl)sl.style.display='none';departments.forEach(x=>x.style.display='none');exSection.style.display='none';$('extraConfig').replaceChildren();profile=null;userId=null;granted=new Set()}
 function draw(){
- const d=canon(profile?.department),admin=['admin','super_admin'].includes(profile?.role);const superLink=$('superAdminLink');if(superLink)superLink.style.display=profile?.role==='super_admin'?'block':'none';
+ const d=canon(profile?.department),superUser=profile?.role==='super_admin',monitor=profile?.role==='admin';const superLink=$('superAdminLink');if(superLink)superLink.style.display=profile?.role==='super_admin'?'block':'none';
  departments.forEach(x=>{
-  x.style.display=profile&&(admin||x.dataset.dept===d)?'block':'none';
+  const tiles=[...x.querySelectorAll('a.tile')]; 
+  for(const t of tiles){const authorized=superUser||(monitor?granted.has(t.getAttribute('href')):x.dataset.dept===d);t.hidden=!authorized;t.style.display=authorized?'flex':'none';}
+  const visible=tiles.some(t=>!t.hidden);
+  x.style.display=profile&&visible?'block':'none';
   const k='dept:'+x.dataset.dept;
   x.classList.toggle('is-collapsed',sizes[k]?.collapsed===true);
   let button=x.querySelector('.dept-fold');
@@ -65,11 +68,12 @@ function draw(){
   button.setAttribute('aria-label',x.dataset.dept+' '+button.textContent);
   button.onclick=()=>{sizes[k]={...sizes[k],collapsed:!sizes[k]?.collapsed};draw()};
  });
- exSection.style.display=profile?'block':'none';if(!profile)return;
+ const allowedExtra=superUser||items.some(x=>granted.has(x.node.getAttribute('href')));
+ exSection.style.display=profile&&allowedExtra?'block':'none';if(!profile)return;
  const names=new Map(items.map(x=>[x.key,x.node]));
  current=[...new Set([...current,...original])].filter(k=>names.has(k));
  for(const k of current){
-  const node=names.get(k);grid.append(node);node.style.display=enabled[k]===false?'none':'flex';
+  const node=names.get(k);grid.append(node);node.style.display=(enabled[k]!==false&&(superUser||granted.has(node.getAttribute('href'))))?'flex':'none';
   node.classList.toggle('wide',sizes[k]?.wide===true);
   node.classList.toggle('folded',sizes[k]?.collapsed===true);
   node.setAttribute('aria-label',k.slice(3)+(sizes[k]?.collapsed?' 접힘':' 펼침'));
@@ -98,6 +102,7 @@ function draw(){
  }
  const settings=$('extraConfig');settings.replaceChildren();
  for(const k of current){
+  if(!superUser&&!granted.has(names.get(k).getAttribute('href')))continue;
   const group=document.createElement('span');group.className='layout-item';
   const box=document.createElement('input');box.type='checkbox';box.checked=enabled[k]!==false;box.onchange=()=>{enabled[k]=box.checked;draw()};
   const label=document.createElement('span');label.textContent=k.slice(3);
@@ -125,6 +130,9 @@ async function login(){
   if(!user)throw Error('회원 인증 실패');
   const p=await sb.from('profiles').select('department,role').eq('id',user.id).single();
   if(p.error||!p.data)throw Error('회원 프로필 조회 실패: '+(p.error?.message||''));profile=p.data;userId=user.id;
+  const grants=await sb.from('jinil_block_access').select('block_key').eq('user_id',userId);
+  if(grants.error)throw grants.error;
+  granted=new Set((grants.data||[]).map(x=>x.block_key));
   const l=await sb.from('jinil_user_layout').select('extras,tile_order,expanded').eq('user_id',userId).maybeSingle();
   if(l.error)throw l.error;
   enabled={...Object.fromEntries(original.map(k=>[k,true])),...(l.data?.extras||{})};
