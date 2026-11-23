@@ -1513,7 +1513,7 @@ body:not(.jinil-live-authorized) .shell{visibility:hidden!important}
 <p>기존 V72 원본 디자인에 Supabase 회원 인증을 연결한 개발용 미리보기입니다.</p>
 <form id="jinil-live-login">
 <label>Supabase URL<input id="jinil-live-url" placeholder="https://xxxx.supabase.co" required></label>
-<label>공개용 키 (Publishable 또는 anon)<input id="jinil-live-key" type="password" required></label>
+<input id="jinil-live-key" type="hidden" value="sb_publishable_LpBmejeme6ViqGyKuGrchw_F8Z8cVVk"><p style="color:#276d44;font-size:12px">✓ Supabase 공개용 키 자동 연결 (직접 입력하지 않아도 됩니다)</p>
 <label>회원 이메일<input id="jinil-live-email" type="email" required></label>
 <label>비밀번호<input id="jinil-live-password" type="password" required></label>
 <button type="submit">Supabase 로그인</button>
@@ -3204,10 +3204,10 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
  const message=LIVE_ID('jinil-live-msg');
  let liveClient=null;
  const msg=t=>{message.textContent=t};
- try{const config=JSON.parse(localStorage.getItem('jinil_config')||'{}');LIVE_ID('jinil-live-url').value=config.url||'';LIVE_ID('jinil-live-key').value=config.key||'';}catch{}
+ try{const config=JSON.parse(localStorage.getItem('jinil_config')||'{}');LIVE_ID('jinil-live-url').value=config.url||'';/* Use project-verified publishable key, not cached browser input. */}catch{}
  const normalize=v=>({'본사 총무':'총무부','생산동':'생산부','가공동':'가공부','테프론동':'테프론부'}[v]||v||'');
  async function authenticate(){
-  const url=LIVE_ID('jinil-live-url').value.trim(),key=LIVE_ID('jinil-live-key').value.trim();
+  const url=LIVE_ID('jinil-live-url').value.trim(),key='sb_publishable_LpBmejeme6ViqGyKuGrchw_F8Z8cVVk';
   if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(url)||!key)throw Error('Supabase URL 또는 공개용 키를 확인하세요.');
   const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
   liveClient=createClient(url,key);
