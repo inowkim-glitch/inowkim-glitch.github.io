@@ -28,6 +28,10 @@ h2{margin:0 0 18px;font-size:20px}
 #extrasGrid .tile.folded .state,#extrasGrid .tile.folded small{display:none}
 .layout-item button:focus-visible{outline:2px solid #20513c}
 @media(max-width:460px){#extrasGrid .tile.wide{grid-column:span 2}}
+
+.dept-fold{margin-left:12px;border:1px solid #b5cab9;background:#edf4ed;color:#244b37;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+.workspace-dept.is-collapsed .grid{display:none}
+.workspace-dept.is-collapsed{padding-bottom:18px}
 </style></head><body><header><b>JINIL · WORKSPACE</b><small>V72 기능 분리·연동 작업 브랜치</small></header><main><section class="member-login"><h2>회원 로그인 및 개인 화면 설정</h2>
 <div class="member-grid"><label>Supabase URL<input id="wsURL" placeholder="https://project.supabase.co"></label>
 <label>공개용 키<input id="wsKey"></label><label>이메일<input id="wsEmail" type="email" autocomplete="username"></label>
@@ -46,7 +50,16 @@ try{const c=JSON.parse(localStorage.getItem('jinil_config')||'{}');$('wsURL').va
 function hide(){departments.forEach(x=>x.style.display='none');exSection.style.display='none';$('extraConfig').replaceChildren();profile=null;userId=null}
 function draw(){
  const d=canon(profile?.department),admin=profile?.role==='admin';
- departments.forEach(x=>x.style.display=profile&&(admin||x.dataset.dept===d)?'block':'none');
+ departments.forEach(x=>{
+  x.style.display=profile&&(admin||x.dataset.dept===d)?'block':'none';
+  const k='dept:'+x.dataset.dept;
+  x.classList.toggle('is-collapsed',sizes[k]?.collapsed===true);
+  let button=x.querySelector('.dept-fold');
+  if(!button){button=document.createElement('button');button.className='dept-fold';button.type='button';x.querySelector('h2').append(button);}
+  button.textContent=sizes[k]?.collapsed?'펼치기':'접기';
+  button.setAttribute('aria-label',x.dataset.dept+' '+button.textContent);
+  button.onclick=()=>{sizes[k]={...sizes[k],collapsed:!sizes[k]?.collapsed};draw()};
+ });
  exSection.style.display=profile?'block':'none';if(!profile)return;
  const names=new Map(items.map(x=>[x.key,x.node]));
  current=[...new Set([...current,...original])].filter(k=>names.has(k));
