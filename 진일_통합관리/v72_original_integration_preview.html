@@ -1296,9 +1296,7 @@ body.v31-desktop{min-width:1100px}body.v31-desktop main#dashboard{min-width:1100
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="진일 통합관리">
 <meta name="mobile-web-app-capable" content="yes">
-<link rel="manifest" href="./jinil-manifest.webmanifest">
-<link rel="icon" type="image/svg+xml" href="./jinil-icon.svg">
-<link rel="apple-touch-icon" href="./jinil-icon-192.png">
+<!-- PWA assets remain in the original. Omitted in this offline integration preview to avoid 404s. -->
 <style id="jinil-v34-fullscreen">
 html{min-height:100%;min-height:100dvh;-webkit-text-size-adjust:100%;}
 body{min-height:100%;min-height:100dvh;overscroll-behavior-y:contain;}
@@ -1498,6 +1496,8 @@ body{min-width:0;overflow-x:hidden}
 </style>
 <style id="jinil-v72-secure-preview">
 body:not(.jinil-live-authorized) .shell{visibility:hidden!important}
+#jinil-live-gate input[type=hidden]{display:none!important}
+#jinil-live-gate .panel{box-sizing:border-box}
 #jinil-live-gate{position:fixed;inset:0;z-index:2147483000;background:#f2f5f2;display:flex;align-items:center;justify-content:center;padding:16px;font:14px "Malgun Gothic",sans-serif}
 #jinil-live-gate[hidden]{display:none!important}
 #jinil-live-gate .panel{max-width:520px;width:100%;background:white;border:1px solid #ccd9d0;border-radius:16px;box-shadow:0 12px 35px #1739251c;padding:24px}
@@ -3107,6 +3107,8 @@ const ADMIN_SHA256='5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb
 const authHash=async value=>{const bytes=new TextEncoder().encode(value);const digest=await crypto.subtle.digest('SHA-256',bytes);return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('')};
 let loggedEmail='';
 try{const old=JSON.parse(sessionStorage.getItem(AUTH_SESSION)||'null');if(old&&old.email&&old.expires>Date.now()){loggedEmail=old.email;emergencySession=!!old.emergency}else sessionStorage.removeItem(AUTH_SESSION)}catch(e){sessionStorage.removeItem(AUTH_SESSION)}
+// Preview mode: legacy browser-only sessions are never proof of Supabase authentication.
+loggedEmail='';emergencySession=false;sessionStorage.removeItem(AUTH_SESSION);localStorage.removeItem(ADMIN_REMEMBER_SESSION);
 $('authEmail').value=rememberedAdmin()?.email||localStorage.getItem(AUTH_REMEMBER)||'';
 $('authEmail').addEventListener('input',syncAdminRememberUI);
 $('adminRemember').addEventListener('change',()=>{if(!$('adminRemember').checked)localStorage.removeItem(ADMIN_REMEMBER_SESSION);syncAdminRememberUI()});
@@ -3195,10 +3197,8 @@ workspace.addEventListener('pointermove',e=>{if(!start||e.pointerId!==start.id)r
 const finish=()=>{start=null;active=false;box?.remove();box=null;document.body.classList.remove('v44-selecting')};workspace.addEventListener('pointerup',finish);workspace.addEventListener('pointercancel',finish);workspace.addEventListener('lostpointercapture',finish);
 window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key==='Escape'){clear();return}if(!(e.key==='Delete'||e.code==='Delete'||e.keyCode===46)||!selected.size||e.target?.closest?.('input,textarea,select,[contenteditable=true]')||document.querySelector('dialog[open]')||!canvas.getClientRects().length)return;e.preventDefault();e.stopImmediatePropagation();let count=0,locked=0;for(const id of selected){const loc=locate(id);if(!loc)continue;const slot=slotAt(loc.p,loc.side,loc.part);if(slot.locked){locked++;continue}slot.items.splice(loc.i,1);count++}selected.clear();if(count){save();render()}else paint();toast(count+'개 블록을 메인 배치에서 제거했습니다.'+(locked?' 잠긴 블록 '+locked+'개는 잠금 해제 후 삭제하세요.':''))},true);new MutationObserver(()=>{for(const id of selected)if(!locate(id))selected.delete(id);paint()}).observe(canvas,{childList:true});})();
 
-})();
-
-/* V72 integration preview: external Supabase Auth + role gate, no production data writes */
-(function(){
+/* V72 integration preview: Supabase Auth + role gate shares the original V72 scope. */
+{
  const LIVE_ID=id=>document.getElementById(id);
  const gate=LIVE_ID('jinil-live-gate');
  const message=LIVE_ID('jinil-live-msg');
@@ -3240,6 +3240,7 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
   syncAuth();render();
   const roleName=jinilLiveRole==='super_admin'?'슈퍼관리자':jinilLiveRole==='admin'?'관리자':'일반회원';
   LIVE_ID('currentAccount').textContent=u.email+' · '+roleName;
+  console.info('[진일 V72] Supabase 인증 확인:',roleName);
   // Show the verified role beside the management button so login state is unambiguous.
   const verifiedBadge=document.createElement('span');
   verifiedBadge.id='jinil-verified-role';
@@ -3268,6 +3269,7 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
  // Never accept cached legacy demo sessions as proof of login.
  document.body.classList.remove('jinil-live-authorized');
  gate.hidden=false;
+}
 })();
 </script>
 <script id="jinil-v31-mobile-script">
@@ -3374,22 +3376,7 @@ function install(){
 }
 new MutationObserver(install).observe(drawer,{childList:true});install();
 })();
-</script><script id="jinil-v34-pwa">
-(function(){
-  // Browsers control the address bar; do not use deceptive scrolling/fullscreen calls.
-  function markMode(){
-    var standalone=window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches;
-    var ios=!!navigator.standalone;
-    document.documentElement.classList.toggle('jinil-installed-mode',!!(standalone||ios));
-  }
-  markMode();
-  if(window.matchMedia){var mq=window.matchMedia('(display-mode: standalone)');if(mq.addEventListener)mq.addEventListener('change',markMode);}
-  // Service workers need a secure origin (HTTPS or localhost), not file://.
-  if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
-    window.addEventListener('load',function(){navigator.serviceWorker.register('./jinil-sw.js').catch(function(err){console.warn('PWA service worker unavailable:',err);});});
-  }
-})();
-</script><script id="v36-main-layout">
+</script><script id="jinil-v34-pwa">/* Preview mode: do not register a nonexistent service worker. */</script><script id="v36-main-layout">
 (function(){
  const KEY='jinil-v36-main-layout';
  let mode='normal';
