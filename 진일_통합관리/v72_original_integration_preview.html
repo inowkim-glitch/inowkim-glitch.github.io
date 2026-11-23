@@ -1506,6 +1506,9 @@ body:not(.jinil-live-authorized) .shell{visibility:hidden!important}
 #jinil-live-gate button[type="submit"]{background:#236a40;color:white;border:0;padding:11px 18px;border-radius:8px;cursor:pointer;margin-top:14px;display:inline-block;width:auto;min-width:0;position:static}
 #jinil-live-gate .note{font-size:12px;color:#6a5940;background:#fff8e9;padding:11px;margin-top:10px}
 #jinil-live-msg{font-size:13px;white-space:pre-wrap;color:#852e28}
+/* Desktop admin scroll: prevent overscroll containment from swallowing wheel input. */
+html,body{overscroll-behavior-y:auto!important}
+#adminScreen{overscroll-behavior-y:auto;touch-action:pan-y}
 </style></head>
 <body>
 <div id="jinil-live-gate" role="dialog" aria-modal="true" aria-label="V72 Supabase 로그인"><div class="panel">
@@ -3270,6 +3273,34 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
  document.body.classList.remove('jinil-live-authorized');
  gate.hidden=false;
 }
+})();
+</script>
+<script id="jinil-preview-admin-wheel">
+/* Only assist wheel scrolling on the admin screen; do not affect dashboard or dialog scrolling. */
+(()=>{
+  const admin=document.getElementById('adminScreen');
+  if(!admin)return;
+  admin.addEventListener('wheel',e=>{
+    if(admin.hidden||!e.cancelable||e.ctrlKey||document.querySelector('dialog[open]'))return;
+    let node=e.target;
+    while(node&&node!==admin){
+      if(node instanceof Element){
+        const cs=getComputedStyle(node);
+        if(/auto|scroll/.test(cs.overflowY)&&node.scrollHeight>node.clientHeight+2){
+          const d=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?node.clientHeight:1);
+          const canGo=d>0?node.scrollTop<node.scrollHeight-node.clientHeight-1:node.scrollTop>1;
+          if(canGo)return;
+        }
+      }
+      node=node.parentElement;
+    }
+    const scroller=document.scrollingElement||document.documentElement;
+    const delta=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?window.innerHeight:1);
+    if(delta&&scroller.scrollHeight>scroller.clientHeight+2){
+      e.preventDefault();
+      scroller.scrollTop+=delta;
+    }
+  },{passive:false});
 })();
 </script>
 <script id="jinil-v31-mobile-script">
