@@ -57,4 +57,5 @@ log('선택한 '+sent+'건의 서버 송부 기록 저장 완료. 실제 부서 
 $('login').onclick=login;$('logout').onclick=async()=>{if(sb)await sb.auth.signOut();profile=null;rows=[];complete=false;$('workspace').hidden=true;$('identity').textContent='로그인 전';log('로그아웃했습니다.')};
 $('reload').onclick=reload;$('all').onclick=()=>{document.querySelectorAll('input[name=order]').forEach(x=>x.checked=true);updateCount()};$('none').onclick=()=>{document.querySelectorAll('input[name=order]').forEach(x=>x.checked=false);updateCount()};
 document.querySelectorAll('input[name=dept]').forEach(x=>x.addEventListener('change',updateCount));$('send').onclick=send;
-</script></main></body></html>
+</script></main><script src="../../../common/pointer-wheel.js" defer></script>
+</body></html>

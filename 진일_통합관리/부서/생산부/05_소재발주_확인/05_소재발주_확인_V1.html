@@ -101,4 +101,5 @@ $('logout').onclick=async()=>{if(channel&&sb)await sb.removeChannel(channel);if(
 $('search').oninput=draw;$('filter').onchange=draw;
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&profile)refresh()});
 setInterval(()=>{if(profile)refresh()},60000);
-</script></main></body></html>
+</script></main><script src="../../../common/pointer-wheel.js" defer></script>
+</body></html>
