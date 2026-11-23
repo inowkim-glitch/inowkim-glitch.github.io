@@ -1506,6 +1506,17 @@ body:not(.jinil-live-authorized) .shell{visibility:hidden!important}
 #jinil-live-gate button[type="submit"]{background:#236a40;color:white;border:0;padding:11px 18px;border-radius:8px;cursor:pointer;margin-top:14px;display:inline-block;width:auto;min-width:0;position:static}
 #jinil-live-gate .note{font-size:12px;color:#6a5940;background:#fff8e9;padding:11px;margin-top:10px}
 #jinil-live-msg{font-size:13px;white-space:pre-wrap;color:#852e28}
+#jinil-test-blocks[hidden],#jinil-test-viewer[hidden]{display:none!important}
+#jinil-test-blocks{margin-top:14px;border-top:1px dashed #abc5b2;padding-top:13px}
+#jinil-test-blocks h3{font-size:13px;color:#345d48;margin:0 0 8px}
+#jinil-test-blocks .jinil-test-source{display:block;width:100%;padding:12px;margin:8px 0;background:#f0f5f1;border:2px dashed #8fb8a0;border-radius:12px;color:#1f5941;opacity:.62;cursor:pointer;text-align:left;transition:opacity .2s}
+#jinil-test-blocks .jinil-test-source:hover,#jinil-test-blocks .jinil-test-source:focus-visible{opacity:.95;outline:2px solid #6b9e7e;outline-offset:2px}
+#jinil-test-blocks .jinil-test-source small{display:block;font-size:11px;margin-top:5px;color:#5a755f}
+#jinil-test-viewer{position:fixed;inset:0;z-index:2147483010;background:#0f231bd9;padding:24px;display:flex;align-items:center;justify-content:center}
+#jinil-test-viewer .jinil-test-panel{width:min(1050px,98%);height:min(88vh,900px);background:white;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+#jinil-test-viewer .jinil-test-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#jinil-test-viewer .jinil-test-toolbar button{border:0;border-radius:8px;background:#285b42;color:white;padding:9px 18px;cursor:pointer}
+#jinil-test-viewer iframe{width:100%;flex:1;min-height:0;border:1px solid #bdcdbf;border-radius:8px;background:white}
 /* Desktop admin scroll: prevent overscroll containment from swallowing wheel input. */
 html,body{overscroll-behavior-y:auto!important}
 #adminScreen{overscroll-behavior-y:auto;touch-action:pan-y}
@@ -1524,11 +1535,21 @@ html,body{overscroll-behavior-y:auto!important}
 <p id="jinil-live-msg" role="status"></p>
 <div class="note">⚠ V72 원본 내부의 발주·재고 기능은 아직 로컬 시험 데이터가 남아 있습니다. 실제 업무 데이터를 등록하지 마세요. 운영 배포용이 아닙니다.</div>
 </div></div>
+<div id="jinil-test-viewer" hidden role="dialog" aria-modal="true" aria-label="슈퍼관리자 블록 테스트">
+<div class="jinil-test-panel"><div class="jinil-test-toolbar"><b id="jinil-test-heading">테스트 미리보기</b>
+<button id="jinil-test-close" type="button">테스트 닫기</button></div>
+<p style="font-size:12px;margin:0;color:#805c26">테스트 전용입니다. 운영 배포는 진행되지 않습니다. 신뢰할 수 있는 HTML만 실행하세요.</p>
+<iframe id="jinil-test-frame" sandbox="allow-scripts allow-forms" referrerpolicy="no-referrer" title="격리된 블록 테스트"></iframe>
+</div></div>
 <div class="shell">
 <div id="authCover" class="auth-cover"><div class="auth-panel"><h1>진일 통합관리</h1><p>JINIL MANAGEMENT SYSTEM · 회원 로그인</p><form id="authLoginForm"><label for="authEmail">아이디 (이메일)</label><input id="authEmail" type="email" autocomplete="username" required><label for="authPass">비밀번호</label><input id="authPass" type="password" autocomplete="current-password" required><small id="authPassCount" class="pw-counter">0자리 입력</small><label id="adminRememberLabel" style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px"><input id="adminRemember" type="checkbox" checked style="width:auto;margin:0"> 이 기기에서 관리자 로그인 기억하기 (30일)</label><p id="adminRememberInfo" class="auth-note" style="margin-top:4px">관리자 로그인 후 이 기기에서는 비밀번호 없이 로그인 버튼만 누를 수 있습니다. 공용 PC에서는 체크를 해제하세요.</p><p class="auth-note">일반회원은 숫자 8개와 특수문자 1개(총 9자리), 관리자는 지정된 고정 비밀번호를 사용합니다.</p><button class="btn primary" type="submit" style="width:100%;margin-top:12px">로그인</button></form><form id="authSignupForm" hidden><label for="signupEmail">이메일</label><input id="signupEmail" type="email" required><label for="signupPass">비밀번호 (숫자 8개 + 특수문자 1개)</label><input id="signupPass" type="password" required><small id="signupPassCount" class="pw-counter">0 / 9자리</small><label for="signupConfirm">비밀번호 확인</label><input id="signupConfirm" type="password" required><small id="signupConfirmCount" class="pw-counter">0 / 9자리</small><small id="signupRuleHint" class="pw-hint">숫자 8개와 특수문자 1개를 입력하세요.</small><p class="auth-note">다른 사이트에서 사용 중인 비밀번호는 재사용하지 마세요.</p><button class="btn primary" type="submit" style="width:100%;margin-top:12px">회원가입</button></form><form id="authEmergencyForm" hidden><label for="emergencyEmail">승인된 회원 이메일</label><input id="emergencyEmail" type="email" required><label for="emergencyCode">긴급 로그인 비밀번호 (관리자 승인 후 숫자 8자리)</label><input id="emergencyCode" type="password" inputmode="numeric" pattern="[0-9]{8}" required><small id="emergencyCodeCount" class="pw-counter">0 / 8자리</small><p class="auth-note" style="color:#b42318;font-weight:700">긴급 로그인 승인 상태에서는 최대 10시간만 이용할 수 있으며, 비밀번호 변경 후 즉시 해제됩니다.</p><button class="btn primary" type="submit" style="width:100%;margin-top:12px">긴급 로그인</button></form><form id="authRecoveryForm" hidden><label for="recoveryEmail">가입 이메일</label><input id="recoveryEmail" type="email" required><p class="auth-note">이메일 재설정 링크 발송은 Supabase 연결 후 사용 가능합니다. 현재는 관리자에게 긴급 복구 승인을 요청하세요.</p><button class="btn primary" type="submit" style="width:100%;margin-top:12px">비밀번호 재설정 안내</button></form><p id="authMessage" class="auth-msg" role="status"></p><div class="auth-links"><button id="authLoginTab" type="button">로그인</button><button id="authSignupTab" type="button">회원가입</button><button id="authRecoveryTab" type="button">비밀번호 찾기</button><button id="authEmergencyTab" type="button">긴급 로그인</button></div></div></div><header><div class="brand"><div class="mark">J</div><div><b>진일 통합관리</b><small>JINIL MANAGEMENT SYSTEM</small></div></div><div class="header-right"><span><i class="status-dot"></i>디자인 시안 · 로컬 저장</span><span id="currentAccount" class="account-chip"></span><button class="iconbtn" id="accountPasswordBtn" type="button">비밀번호 변경</button><button class="iconbtn" id="logoutBtn" type="button">로그아웃</button><button class="iconbtn" id="adminEntry" type="button">⚙ 관리자 페이지</button><button class="iconbtn" id="reset" title="발주 목록 및 업무 데이터 초기화 관리">↺ 초기화</button><button class="iconbtn" id="resetAllDailyOrders" type="button" title="모든 날짜 및 부서의 발주 데이터 초기화">전체 발주 목록 검색 초기화</button></div></header>
 <main id="dashboard">
 <section class="workspace"><div class="section-head"><div><div class="workspace-heading"><h1 class="section-title">메인 블록 배치 공간</h1><span class="eyebrow">WORKSPACE</span></div></div><div id="v36-layout-controls" class="v36-layout-controls" aria-label="메인 블록 화면 배치"><span class="v39-block-count" id="v39-block-count" aria-live="polite">블록 0개</span><button type="button" data-v36-layout="full" aria-pressed="false">⛶ 전체창</button></div><span class="count" id="count" hidden></span></div><div id="canvas" class="canvas" aria-label="메인 블록 배치 공간"></div></section>
-<aside class="sidebar"><div class="eyebrow">BLOCK LIBRARY</div><h2 class="side-title">블록 목록</h2><p class="side-hint">블록을 왼쪽으로 끌어 배치하세요.<br>연필로 수정하거나 X를 눌러 삭제할 수 있습니다.</p><div id="sourceList" class="side-list"></div><button class="add" id="addBtn">＋ 새로운 블럭 추가</button><p class="footnote">현재는 디자인 시안입니다.<br>블록 페이지에는 추후 기능을 연결합니다.</p></aside>
+<aside class="sidebar"><div class="eyebrow">BLOCK LIBRARY</div><h2 class="side-title">블록 목록</h2><p class="side-hint">블록을 왼쪽으로 끌어 배치하세요.<br>연필로 수정하거나 X를 눌러 삭제할 수 있습니다.</p><div id="sourceList" class="side-list"></div><section id="jinil-test-blocks" hidden aria-label="슈퍼관리자 테스트 블록">
+<h3>🧪 테스트 전용 블록 <button id="jinil-test-refresh" type="button" style="font-size:11px;padding:4px 6px">새로고침</button></h3>
+<div id="jinil-test-items"></div>
+<p style="font-size:11px;line-height:1.5;color:#647d6c">흐릿한 블록은 슈퍼관리자만 테스트할 수 있으며 회원에게 공개되지 않습니다.</p>
+</section><button class="add" id="addBtn">＋ 새로운 블럭 추가</button><p class="footnote">현재는 디자인 시안입니다.<br>블록 페이지에는 추후 기능을 연결합니다.</p></aside>
 </main>
 <section id="adminScreen" class="admin-screen" hidden><div class="admin-top"><button class="back" id="adminBack" type="button">← 메인으로 돌아가기</button><h1>통합 관리자 페이지 <small>ADMIN MANAGEMENT</small></h1></div><div class="admin-content"><section style="padding:16px;margin-bottom:20px;border:1px solid #b9d4c2;border-radius:12px;background:#f3f9f4">
 <h2 style="margin:0 0 8px">블록 업데이트 관리</h2>
@@ -3214,6 +3235,50 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
  const msg=t=>{message.textContent=t};
  try{const config=JSON.parse(localStorage.getItem('jinil_config')||'{}');LIVE_ID('jinil-live-url').value=config.url||'';/* Use project-verified publishable key, not cached browser input. */}catch{}
  const normalize=v=>({'본사 총무':'총무부','생산동':'생산부','가공동':'가공부','테프론동':'테프론부'}[v]||v||'');
+ const testPanel=LIVE_ID('jinil-test-blocks'),testItems=LIVE_ID('jinil-test-items');
+ const viewer=LIVE_ID('jinil-test-viewer'),frame=LIVE_ID('jinil-test-frame');
+ let stagedVersions=[];
+ const nameFromPath=key=>{
+   const parts=String(key||'').split('/');
+   const folder=parts[parts.length-2]||parts[parts.length-1]||'블록';
+   return folder.replace(/^\\d+_/,'').replaceAll('_',' ');
+ };
+ function closeTest(){viewer.hidden=true;frame.removeAttribute('srcdoc')}
+ LIVE_ID('jinil-test-close').addEventListener('click',closeTest);
+ viewer.addEventListener('click',e=>{if(e.target===viewer)closeTest()});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!viewer.hidden)closeTest()});
+ function clearTestBlocks(){stagedVersions=[];testItems.replaceChildren();testPanel.hidden=true;closeTest()}
+ function showTestPreview(version){
+   if(jinilLiveRole!=='super_admin'||!loggedEmail||!document.body.classList.contains('jinil-live-authorized'))return;
+   LIVE_ID('jinil-test-heading').textContent='🧪 '+nameFromPath(version.block_key)+' · V'+version.version_no+' · 테스트 전용';
+   frame.srcdoc=version.html_source;viewer.hidden=false;LIVE_ID('jinil-test-close').focus();
+ }
+ async function refreshTestBlocks(){
+   if(!liveClient||jinilLiveRole!=='super_admin'||!loggedEmail){clearTestBlocks();return}
+   const [v,r]=await Promise.all([
+     liveClient.from('jinil_block_versions').select('id,block_key,version_no,state,html_source,created_at').in('state',['staged','tested']).order('created_at',{ascending:false}),
+     liveClient.from('jinil_block_releases').select('block_key,version_id')
+   ]);
+   if(v.error)throw v.error;if(r.error)throw r.error;
+   const active=new Set((r.data||[]).map(x=>x.version_id)),latest=new Map();
+   for(const item of v.data||[]){if(!active.has(item.id)&&!latest.has(item.block_key))latest.set(item.block_key,item)}
+   stagedVersions=[...latest.values()];testItems.replaceChildren();testPanel.hidden=false;
+   if(!stagedVersions.length){
+     const p=document.createElement('p');p.style.cssText='font-size:12px;color:#778879';
+     p.textContent='등록된 테스트 블록이 없습니다.';testItems.append(p);return;
+   }
+   for(const version of stagedVersions){
+     const btn=document.createElement('button');btn.type='button';btn.className='jinil-test-source';
+     const title=document.createElement('strong');title.textContent='🧪 '+nameFromPath(version.block_key);
+     const note=document.createElement('small');
+     note.textContent='V'+version.version_no+' · '+(version.state==='tested'?'테스트 통과 · 배포 대기':'테스트 대기')+' · 슈퍼관리자 전용';
+     btn.append(title,note);btn.addEventListener('click',()=>showTestPreview(version));testItems.append(btn);
+   }
+ }
+ LIVE_ID('jinil-test-refresh').addEventListener('click',()=>{
+   refreshTestBlocks().catch(e=>{testItems.textContent='테스트 블록 조회 실패: '+e.message;testPanel.hidden=false});
+ });
+
  async function authenticate(){
   const url=LIVE_ID('jinil-live-url').value.trim(),key='sb_publishable_LpBmejeme6ViqGyKuGrchw_F8Z8cVVk';
   if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(url)||!key)throw Error('Supabase URL 또는 공개용 키를 확인하세요.');
@@ -3246,6 +3311,8 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
   sessionStorage.removeItem(AUTH_SESSION);
   localStorage.setItem('jinil_config',JSON.stringify({url,key}));
   syncAuth();render();
+  if(jinilLiveRole==='super_admin')await refreshTestBlocks();
+  else clearTestBlocks();
   const roleName=jinilLiveRole==='super_admin'?'슈퍼관리자':jinilLiveRole==='admin'?'관리자':'일반회원';
   LIVE_ID('currentAccount').textContent=u.email+' · '+roleName;
   console.info('[진일 V72] Supabase 인증 확인:',roleName);
@@ -3263,6 +3330,7 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
   LIVE_ID('logoutBtn').onclick=async()=>{
    await liveClient.auth.signOut();
    jinilLiveRole='';jinilLiveDepartment='';loggedEmail='';
+   clearTestBlocks();
    document.body.classList.remove('jinil-live-authorized');gate.hidden=false;
    LIVE_ID('jinil-live-password').value='';LIVE_ID('jinil-verified-role')?.remove();syncAuth();msg('로그아웃했습니다.');
   };
