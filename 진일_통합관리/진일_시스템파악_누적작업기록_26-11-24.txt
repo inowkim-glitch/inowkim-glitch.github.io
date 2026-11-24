@@ -183,3 +183,17 @@ Supabase DB/Auth/RLS/Edge Function 변경: 없음 (기존 운영 프로젝트 �
 주의: 프런트엔드 실시간 알림과 모바일 OS 백그라운드 푸시는 구분함. V78은 서버 데이터가 생성될 때의 화면 알림 클라이언트이며, V78 안의 로컬 발주 기능 전체가 Supabase 실발주를 저장하는지는 별도 검증 필요.
 운영 배포: 없음. 이전 HTML과 실제 운영 업무 데이터 변경 없음.
 ----
+
+
+[11. 2026-11-24 V78 발주 OS 푸시 서버 준비 기록]
+사용자 지시: GitHub와 Supabase의 푸시 기능 연결 진행. 이전 누적 기록과 V72~V77 파일 무손실 보존.
+Supabase: 기존 push-register, push-send(숫자 테스트용) 함수는 변경하지 않음.
+신규 Edge Function 배포: jinil-push-order-v78, 버전 1, ACTIVE. 서버 WEBHOOK_SECRET을 확인하고 public.jinil_dispatches INSERT 이벤트인지 검증하며, 해당 발주에 대해 public.jinil_notifications에 등록된 수신 회원의 push_subscriptions 기기에만 알림 전송. 서비스 역할 키와 VAPID 비밀키를 클라이언트 또는 GitHub에 하드코딩하지 않음.
+GitHub 신규 백엔드 소스: supabase/functions/jinil-push-order-v78/index.ts
+DB 자동 웹훅 활성화: 실행하지 않음. 기존 운영 발주 INSERT에 영향을 주지 않도록 아래 절차만 GitHub에 보관.
+운영 승인 대기 SQL: supabase/activation_plans/jinil_push_order_v78_NOT_APPLIED.sql
+기존 Supabase DB/RLS/트리거 데이터: 변경 없음. 기존 발주 알림 테이블과 realtime 기능 재사용.
+운영 배포: GitHub Pages 업데이트 없음. 신규 Edge 함수의 호출 엔드포인트는 존재하지만 자동 발송 DB 트리거는 붙이지 않음.
+추가 검증 필요: 테스트 발주→Supabase 알림 INSERT→실회원 화면 모달/녹색 표시→Android/PWA 구독→앱이 닫힌 상태의 OS 푸시 발송 및 중복 방지, 서버 함수의 정상 전송/실패 처리. 기록만으로 통과 간주하지 않음.
+보안 유의: 과거 숫자 시험 웹훅의 비밀값이 트리거 정의에 포함돼 있어, 운영 활성화 전에 서버 비밀값 교체 및 로그 노출 범위 검토 필요. 비밀값 자체는 누적 기록에 적지 않음.
+----
