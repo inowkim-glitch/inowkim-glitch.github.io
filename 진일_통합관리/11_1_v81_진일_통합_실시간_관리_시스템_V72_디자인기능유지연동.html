@@ -2231,8 +2231,8 @@ const OrderRepository={
  // 이력에는 시각과 변경 전후 상태를 남깁니다. 실제 서버 통합 시 인증된 사용자 ID를 기록합니다.
  transition(o,next){const before=o.status||'working';if(before===next)return;o.statusHistory.push({id:makeRecordId(),from:before,to:next,at:new Date().toISOString(),actor:'local-test'});o.status=next;o.updatedISO=new Date().toISOString()}
 };
-const testData=()=>OrderRepository.read();
-const saveTestData=x=>OrderRepository.write(x);
+const testData=()=>window.JinilOrderTransportV81?.mergeRead(OrderRepository.read())||OrderRepository.read();
+const saveTestData=x=>OrderRepository.write(window.JinilOrderTransportV81?.stripRemote(x)||x);
 const VENDOR_KEY='jinil-vendors-v1';
 const vendorRead=()=>{try{return JSON.parse(localStorage.getItem(VENDOR_KEY)||'[]')}catch{return []}};
 const vendorWrite=rows=>{try{localStorage.setItem(VENDOR_KEY,JSON.stringify(rows));return true}catch{alert('업체 정보 저장에 실패했습니다.');return false}};
@@ -2668,8 +2668,18 @@ function renderTestModule(panel,kind,dept){
    return Object.entries(all).flatMap(([key,value])=>(value.orders||[]).map(o=>({...o,_sourceDepartment:key}))).filter(o=>!v49Dept(dept)||(o.dispatchState!=='pending'&&v49OrderDept(o,o._sourceDepartment)===v49Dept(dept)))
     .sort((a,b)=>(Date.parse(b.createdISO||'')||Number(b.id)||0)-(Date.parse(a.createdISO||'')||Number(a.id)||0));
   };
-  const updateStatus=(id,status,sourceDepartment)=>{const all=testData();const entry=all[sourceDepartment]||Object.values(all).find(v=>Array.isArray(v.orders)&&v.orders.some(x=>String(x.id)===String(id)));
-   const o=entry?.orders.find(x=>String(x.id)===String(id));if(!o)return false;OrderRepository.transition(o,status);if(!saveTestData(all))return false;drawList();return true};
+  const updateStatus=async(id,status,sourceDepartment)=>{
+   const all=testData(),entry=all[sourceDepartment]||Object.values(all).find(v=>Array.isArray(v.orders)&&v.orders.some(x=>String(x.id)===String(id)));
+   const o=entry?.orders.find(x=>String(x.id)===String(id));if(!o)return false;
+   if(o.jinilServerDispatchId){
+    try{
+     if(!liveClient||!window.JinilOrderTransportV81)throw Error('Supabase 로그인 또는 동기화 모듈이 없습니다.');
+     await window.JinilOrderTransportV81.advanceStatus(liveClient,o,status);
+     drawList();return true;
+    }catch(e){alert('서버 발주 상태 변경 실패: '+String(e.message||e));return false}
+   }
+   OrderRepository.transition(o,status);if(!saveTestData(all))return false;drawList();return true;
+  };
   function drawList(){
    list.replaceChildren();const term=search.value.trim().toLowerCase();
    departmentFilters.querySelectorAll('button').forEach(b=>{const active=b.dataset.department===selectedDepartment;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});
@@ -2777,8 +2787,8 @@ function renderTestModule(panel,kind,dept){
    makeButton('닫기',close,'jinil-order-close');
    makeButton(statusName,()=>{
     const msg=isDone?'완료 상태를 취소하고 미완료로 되돌리시겠습니까?':'이 발주 작업을 완료 처리하시겠습니까?';
-    jinilConfirmModal(msg,()=>{
-     if(updateStatus(id,next,o._sourceDepartment))close();
+    jinilConfirmModal(msg,async()=>{
+     if(await updateStatus(id,next,o._sourceDepartment))close();
      else jinilNoticeModal('상태 변경에 실패했습니다. 다시 시도해 주세요.');
     });
    },isDone?'jinil-order-status-revert':'jinil-order-status-green');
@@ -2932,7 +2942,8 @@ function renderGeneralOrders(panel,dept){
    cancelOrder.onclick=()=>{
     if(!window.confirm('발주번호: '+String(o.orderNo||o.id)+'\n업체명: '+String(o.company||'')+'\n\n이 발주를 취소하시겠습니까?\n취소된 발주는 삭제되지 않고 취소 목록에 보관됩니다.'))return;
     const data=testData(),orders=data?.[o._department]?.orders||data?.[dept]?.orders;
-    const current=Array.isArray(orders)?orders.find(x=>String(x.id)===String(o.id)):null;
+    const current=(Array.isArray(orders)?orders.find(x=>String(x.id)===String(o.id)):null)||Object.values(data).flatMap(v=>Array.isArray(v?.orders)?v.orders:[]).find(x=>String(x.id)===String(o.id));
+    if(current?.jinilServerDispatchId){alert('서버에 송부된 발주 취소는 별도 승인된 서버 업무 절차가 필요합니다. 서버 기록은 변경하지 않았습니다.');return}
     if(!current||current.status==='cancelled'){detailDialog.close();render();return}
     OrderRepository.transition(current,'cancelled');
     if(saveTestData(data)){detailDialog.close();render()}
@@ -3583,6 +3594,11 @@ function jinilWheelHtml(html){
   localStorage.setItem('jinil_config',JSON.stringify({url,key}));
   syncAuth();render();
   window.JinilV81Session={client:liveClient,user:u};window.JinilRealtimeV81?.start(window.JinilV81Session);
+  window.JinilV81QueueSession={client:liveClient,role:jinilLiveRole,department:jinilLiveDepartment,onUpdate:()=>{
+   if($('detail')?.classList.contains('active')&&['orders','general-orders'].includes(selectedDetailFeature)
+      &&!document.querySelector('dialog[open]')&&!document.activeElement?.matches('input,textarea,select'))renderDetail();
+  }};
+  window.JinilOrderTransportV81?.startQueue(liveClient,window.JinilV81QueueSession);
   window.JinilV81LayoutSession={client:liveClient,user:u,handlers:{
    hasLocal:()=>!!localStorage.getItem(NEW_LAYOUT),
    getSnapshot:()=>({state,layout,detailCustom}),
@@ -3616,6 +3632,7 @@ function jinilWheelHtml(html){
    superPinUnlocked=false;
    window.JinilRealtimeV81?.stop();window.JinilV81Session=null;
    window.JinilLayoutV81?.stop();window.JinilV81LayoutSession=null;
+   window.JinilOrderTransportV81?.stopQueue();window.JinilV81QueueSession=null;
    await liveClient.auth.signOut();
    jinilLiveRole='';jinilLiveDepartment='';loggedEmail='';
    clearTestBlocks();releasedItems.replaceChildren();releasedPanel.hidden=true;
@@ -3889,6 +3906,7 @@ import * as transport from "./common/order-transport-v81.js";
 import * as realtime from "./common/order-realtime-v81.js";
 import * as layoutBridge from "./common/layout-sync-v81.js";
 window.JinilOrderTransportV81=transport;
+if(window.JinilV81QueueSession)transport.startQueue(window.JinilV81QueueSession.client,window.JinilV81QueueSession);
 window.JinilRealtimeV81=realtime;
 window.JinilLayoutV81=layoutBridge;
 if(window.JinilV81Session)realtime.start(window.JinilV81Session);
