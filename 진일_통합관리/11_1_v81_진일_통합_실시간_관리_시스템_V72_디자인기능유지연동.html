@@ -3168,7 +3168,7 @@ function renderDetail(){
  updateDetailConnection();
 }
 let v42MainScroll=0;
-function openPage(b){if(!v61Visible(b)&&!(v51Locked()&&b.id===activeDetailId))return;if(v51Locked()&&b.id!==activeDetailId)return;if(window.innerWidth<=800&&!document.body.classList.contains('v31-desktop'))v42MainScroll=window.scrollY;if(b.id==='delivery-calendar-main'){jinilV25Calendar('납품예정 달력',null,jinilV25Date(new Date()),true);return}activeDetailId=b.id;selectedDetailFeature=v43Mobile()?null:(/총무/.test(b.name)?'general-orders':(['teflon','mc','process'].includes(b.id)?'orders':null));$('dashboard').style.display='none';$('detail').classList.add('active');renderDetail();window.scrollTo(0,0)}
+function openPage(b){if(!v61Visible(b)&&!(v51Locked()&&b.id===activeDetailId))return;if(v51Locked()&&b.id!==activeDetailId)return;if(window.innerWidth<=800&&!document.body.classList.contains('v31-desktop'))v42MainScroll=window.scrollY;if(b.id==='delivery-calendar-main'){jinilV25Calendar('납품예정 달력',null,jinilV25Date(new Date()),true);return}activeDetailId=b.id;window.JinilRealtimeV81?.enterDepartment(b.id);selectedDetailFeature=v43Mobile()?null:(/총무/.test(b.name)?'general-orders':(['teflon','mc','process'].includes(b.id)?'orders':null));$('dashboard').style.display='none';$('detail').classList.add('active');renderDetail();window.scrollTo(0,0)}
 $('back').onclick=()=>{if(v51Locked())return;if(v43Mobile()&&selectedDetailFeature){selectedDetailFeature=null;renderDetail();window.scrollTo(0,0);return}clearDetailConnection();$('detail').classList.remove('active');$('dashboard').style.display='grid';activeDetailId=null;if(window.innerWidth<=800&&!document.body.classList.contains('v31-desktop'))requestAnimationFrame(()=>window.scrollTo(0,v42MainScroll))};
 
 const JINIL_RESET_BACKUP='jinil-v3-last-reset-backup';
@@ -3582,6 +3582,7 @@ function jinilWheelHtml(html){
   sessionStorage.removeItem(AUTH_SESSION);
   localStorage.setItem('jinil_config',JSON.stringify({url,key}));
   syncAuth();render();
+  window.JinilV81Session={client:liveClient,user:u};window.JinilRealtimeV81?.start(window.JinilV81Session);
   if(jinilLiveRole==='super_admin')await refreshTestBlocks();
   else clearTestBlocks();
   await refreshReleasedOther();
@@ -3602,6 +3603,7 @@ function jinilWheelHtml(html){
   LIVE_ID('logoutBtn').onclick=async()=>{
    jinilNotificationDispose?.();jinilNotificationDispose=null;
    superPinUnlocked=false;
+   window.JinilRealtimeV81?.stop();window.JinilV81Session=null;
    await liveClient.auth.signOut();
    jinilLiveRole='';jinilLiveDepartment='';loggedEmail='';
    clearTestBlocks();releasedItems.replaceChildren();releasedPanel.hidden=true;
@@ -3872,7 +3874,10 @@ new MutationObserver(()=>{if(!sc.hidden)draw()}).observe(sc,{attributes:true,att
 
 <script type="module" id="jinil-v81-transport-loader">
 import * as transport from "./common/order-transport-v81.js";
+import * as realtime from "./common/order-realtime-v81.js";
 window.JinilOrderTransportV81=transport;
+window.JinilRealtimeV81=realtime;
+if(window.JinilV81Session)realtime.start(window.JinilV81Session);
 </script>
 </body></html>
 <!--
