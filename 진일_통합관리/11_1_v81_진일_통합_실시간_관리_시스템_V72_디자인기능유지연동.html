@@ -1774,7 +1774,7 @@ let detailLayouts={};try{detailLayouts=JSON.parse(localStorage.getItem(DETAIL_KE
 const DETAIL_CUSTOM_KEY='jinil-detail-custom-blocks-v1';
 let detailCustom={};try{detailCustom=JSON.parse(localStorage.getItem(DETAIL_CUSTOM_KEY))||{}}catch(e){}
 if(!detailCustom||typeof detailCustom!=='object'||Array.isArray(detailCustom))detailCustom={};
-const detailSave=()=>localStorage.setItem(DETAIL_CUSTOM_KEY,JSON.stringify(detailCustom));
+const detailSave=()=>{localStorage.setItem(DETAIL_CUSTOM_KEY,JSON.stringify(detailCustom));window.JinilLayoutV81?.queue({state,layout,detailCustom})};
 for(const entries of Object.values(detailCustom))if(Array.isArray(entries))for(const entry of entries)if(entry.type==='general-orders'||entry.id==='general-orders')entry.name='발주 목록 검색';
 let adminPurpose='type',detailEditing=null,adminAuthorized=false;
 const ADMIN_PASS_KEY='jinil-admin-password-v1';
@@ -1862,7 +1862,7 @@ function compactPages(){
  const count=Math.max(1,left.length,right.length);
  layout.pages=Array.from({length:count},(_,i)=>({left:left[i]||newZone(),right:right[i]||newZone()}));
 }
-function save(){compactPages();localStorage.setItem(KEY,JSON.stringify(state));localStorage.setItem(NEW_LAYOUT,JSON.stringify(layout))}
+function save(){compactPages();localStorage.setItem(KEY,JSON.stringify(state));localStorage.setItem(NEW_LAYOUT,JSON.stringify(layout));window.JinilLayoutV81?.queue({state,layout,detailCustom})}
 function toast(msg){const n=$('toast');n.textContent=msg;n.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>n.style.display='none',2600)}
 function colorDialogFor(id){colorEditing=id;const b=state.blocks.find(x=>x.id===id);if(!b)return;$('colorTitle').textContent=b.name+' · 색상 설정';drawPalettes();$('colorDialog').showModal()}
 function drawPalettes(){const b=state.blocks.find(x=>x.id===colorEditing);if(!b)return;
@@ -3583,6 +3583,17 @@ function jinilWheelHtml(html){
   localStorage.setItem('jinil_config',JSON.stringify({url,key}));
   syncAuth();render();
   window.JinilV81Session={client:liveClient,user:u};window.JinilRealtimeV81?.start(window.JinilV81Session);
+  window.JinilV81LayoutSession={client:liveClient,user:u,handlers:{
+   hasLocal:()=>!!localStorage.getItem(NEW_LAYOUT),
+   getSnapshot:()=>({state,layout,detailCustom}),
+   applySnapshot:(snapshot)=>{
+    if(!Array.isArray(snapshot?.state?.blocks)||!Array.isArray(snapshot?.layout?.pages))return;
+    state=snapshot.state;layout=snapshot.layout;detailCustom=snapshot.detailCustom&&typeof snapshot.detailCustom==='object'?snapshot.detailCustom:detailCustom;
+    localStorage.setItem(KEY,JSON.stringify(state));localStorage.setItem(NEW_LAYOUT,JSON.stringify(layout));localStorage.setItem(DETAIL_CUSTOM_KEY,JSON.stringify(detailCustom));
+    render();
+   }
+  }};
+  window.JinilLayoutV81?.start(liveClient,u.id,window.JinilV81LayoutSession.handlers);
   if(jinilLiveRole==='super_admin')await refreshTestBlocks();
   else clearTestBlocks();
   await refreshReleasedOther();
@@ -3604,6 +3615,7 @@ function jinilWheelHtml(html){
    jinilNotificationDispose?.();jinilNotificationDispose=null;
    superPinUnlocked=false;
    window.JinilRealtimeV81?.stop();window.JinilV81Session=null;
+   window.JinilLayoutV81?.stop();window.JinilV81LayoutSession=null;
    await liveClient.auth.signOut();
    jinilLiveRole='';jinilLiveDepartment='';loggedEmail='';
    clearTestBlocks();releasedItems.replaceChildren();releasedPanel.hidden=true;
@@ -3875,9 +3887,12 @@ new MutationObserver(()=>{if(!sc.hidden)draw()}).observe(sc,{attributes:true,att
 <script type="module" id="jinil-v81-transport-loader">
 import * as transport from "./common/order-transport-v81.js";
 import * as realtime from "./common/order-realtime-v81.js";
+import * as layoutBridge from "./common/layout-sync-v81.js";
 window.JinilOrderTransportV81=transport;
 window.JinilRealtimeV81=realtime;
+window.JinilLayoutV81=layoutBridge;
 if(window.JinilV81Session)realtime.start(window.JinilV81Session);
+if(window.JinilV81LayoutSession)layoutBridge.start(window.JinilV81LayoutSession.client,window.JinilV81LayoutSession.user.id,window.JinilV81LayoutSession.handlers);
 </script>
 </body></html>
 <!--
