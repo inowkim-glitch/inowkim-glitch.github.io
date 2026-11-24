@@ -166,3 +166,20 @@ HTML·JavaScript 수정: 없음
 배포: 없음
 실제 푸시 기능 시험: 미실시
 ----
+
+
+[10. 2026-11-24 V78 발주 알림 개발 연동 기록]
+작업 목적: GitHub·Supabase의 발주 알림 수신과 메인 블록 강조 표시 연결. 기존 V77 코드 및 운영 시스템 보존.
+작업 기준: GitHub 개발 브랜치의 V77. 기존 V75~V77 파일 덮어쓰기 없음.
+신규 V78: 진일_통합관리/11_1_v78_진일_통합_실시간_관리_시스템_재작업.html
+추가 코드: 진일_통합관리/jinil-notifications.js
+추가 서비스 워커: 진일_통합관리/jinil-push-sw.js
+원클릭 실행기: tools/jinil_launch.py의 시작 파일을 V78로 변경
+수정 내용: Supabase 인증 완료 시 사용자별 jinil_notifications 구독, 신규 INSERT 시 중앙 3초 안내 및 우하단 X 닫기 알림, 읽지 않은 발주가 있는 부서 메인 블록 녹색 강조, 해당 부서 화면 진입 시 read_at 업데이트, 로그아웃 시 채널 정리, 중앙/우하단/소리 옵션, 모바일 기기 푸시 구독 등록 UI.
+Supabase 구조 재확인: jinil_dispatches INSERT 후 jinil_enqueue_dispatch_notification 트리거가 jinil_notifications를 생성, RLS 본인 조회·읽음 정책, supabase_realtime 테이블 게시 모두 기존 구성됨. 중복 생성하지 않음.
+Supabase DB/Auth/RLS/Edge Function 변경: 없음 (기존 운영 프로젝트 보존).
+기존 push-register Edge Function: 인증된 사용자의 구독 등록 기능 있음. 기존 push-send Edge Function: shared_test UPDATE 시험용이며 발주 INSERT 시 OS 푸시 자동 발송은 아직 연결되지 않음.
+검사: 추가된 JS 및 서비스 워커 문법 검사, GitHub 파일 생성/갱신 확인, 원클릭 실행기 대상 검사 진행. Supabase 실회원·실기기 수신 테스트는 미실시.
+주의: 프런트엔드 실시간 알림과 모바일 OS 백그라운드 푸시는 구분함. V78은 서버 데이터가 생성될 때의 화면 알림 클라이언트이며, V78 안의 로컬 발주 기능 전체가 Supabase 실발주를 저장하는지는 별도 검증 필요.
+운영 배포: 없음. 이전 HTML과 실제 운영 업무 데이터 변경 없음.
+----
