@@ -211,3 +211,18 @@ DB 자동 웹훅 활성화: 실행하지 않음. 기존 운영 발주 INSERT에 
 운영 영향: 정식 GitHub Pages 배포 없음. 단, Supabase 운영 DB의 발주 INSERT 이벤트에 새 자동 웹훅이 활성화되어 향후 발주에 작동할 수 있음.
 기존 기록 [1]~[11] 보존.
 ----
+
+
+[12. 2026-11-24 발주 푸시 자동 트리거 및 롤백 검증]
+목적: 발주 자동 푸시와 DB 수신 기록의 실제 연결 상태를 재확인하고 검증 결과를 남김.
+기준: GitHub 개발 브랜치 V78, Supabase hjkcdaqzbsnmwpvpvpti.
+읽기 확인: 발주용 Edge Function jinil-push-order-v78 ACTIVE(버전 1), 기존 push-send 및 push-register도 ACTIVE. 운영 DB jinil_dispatches에 jinil_order_os_push_v78 AFTER INSERT 트리거가 이미 활성화된 상태임을 조회 확인; 이번 작업에서 중복 생성하지 않음.
+발주 알림 데이터 경로: jinil_dispatch_notification_on_insert AFTER INSERT → jinil_notifications 생성 → 회원별 Realtime 조회. 신규 발주용 진일_order OS 푸시 웹훅은 위 발주 전용 Edge Function 호출로 연결되어 있음.
+테스트: SQL BEGIN 안에서 테스트 발주 1건/생산부 송부 1건 생성 → 해당 발주에 대한 jinil_notifications 2건 자동 생성 확인 → ROLLBACK.
+테스트 후 실제 데이터 확인: 테스트 발주 0건, 진일 송부 전체 0건, 알림 전체 0건. 기존 업무 데이터 남기지 않음.
+실기기 확인: 휴대폰의 실제 OS 알림 수신은 아직 사용자 기기에서 확인하지 않음. 테스트가 커밋되지 않았으므로 외부 푸시 전송 테스트는 발생시키지 않음. 해당 검사는 '사용자 기기 확인'으로 분리하여 표시.
+GitHub 소스: V78 HTML 및 진일_통합관리/jinil-notifications.js, jinil-push-sw.js 유지. GitHub Pages 운영 배포는 별도 승인 없이 변경하지 않음.
+Supabase 이번 실행의 스키마/정책/함수 변경: 없음. 기존 활성 트리거와 서버 함수 동작을 조회·트랜잭션 테스트함.
+보안 주의: 기존 트리거에 웹훅 인증용 정적 값이 존재하므로 향후 시크릿 로테이션 및 접근 제한 검토 필요. 원문 비밀값은 누적 기록에 저장하지 않음.
+운영 상태 안내: 발주 자동 웹훅 활성 확인과 실제 Android/PC 브라우저 사용자 경험 검증을 구별할 것.
+----
