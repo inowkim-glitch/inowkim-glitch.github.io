@@ -47,6 +47,7 @@ h2{margin:0 0 18px;font-size:20px}
 const $=id=>document.getElementById(id),canon=v=>({'본사 총무':'총무부','생산동':'생산부','가공동':'가공부','테프론동':'테프론부'}[v]||v);
 const departments=[...document.querySelectorAll('.workspace-dept')],exSection=document.querySelector('.workspace-extra'),grid=$('extrasGrid');
 const items=[...grid.querySelectorAll('a.tile')].map(node=>({key:node.getAttribute('href').split('/')[1],node}));
+let draggingDepartmentTile=null;
 const original=items.map(x=>x.key);let current=[...original],enabled=Object.fromEntries(original.map(k=>[k,true])),sizes={},sb=null,profile=null,userId=null,granted=new Set();
 const say=s=>$('wsStatus').textContent=s;
 const layoutMsg=s=>{const el=$('layoutStatus');if(el)el.textContent=s};
@@ -56,7 +57,30 @@ function hide(){const sl=$('superAdminLink');if(sl)sl.style.display='none';depar
 function draw(){
  const superUser=profile?.role==='super_admin';const superLink=$('superAdminLink');if(superLink)superLink.style.display=profile?.role==='super_admin'?'block':'none';
  departments.forEach(x=>{
-  const tiles=[...x.querySelectorAll('a.tile')]; 
+  const tiles=[...x.querySelectorAll('a.tile')];
+  const deck=x.querySelector('.grid'),orderKey='dept-order:'+x.dataset.dept;
+  const savedOrder=Array.isArray(sizes[orderKey])?sizes[orderKey]:[];
+  const normalizedOrder=[...tiles].sort((a,b)=>{
+   const x=savedOrder.indexOf(a.getAttribute('href')),y=savedOrder.indexOf(b.getAttribute('href'));
+   return (x<0?1000+tiles.indexOf(a):x)-(y<0?1000+tiles.indexOf(b):y);
+  });
+  normalizedOrder.forEach(node=>deck.append(node));
+  for(const tile of normalizedOrder){
+   tile.draggable=true;
+   tile.ondragstart=e=>{draggingDepartmentTile=tile.getAttribute('href');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',draggingDepartmentTile)};
+   tile.ondragend=()=>{draggingDepartmentTile=null;normalizedOrder.forEach(n=>n.classList.remove('is-drop-target'))};
+   tile.ondragover=e=>{if(draggingDepartmentTile&&draggingDepartmentTile!==tile.getAttribute('href')){e.preventDefault();tile.classList.add('is-drop-target')}};
+   tile.ondragleave=()=>tile.classList.remove('is-drop-target');
+   tile.ondrop=e=>{
+    e.preventDefault();tile.classList.remove('is-drop-target');
+    const source=draggingDepartmentTile,target=tile.getAttribute('href');
+    if(!source||source===target)return;
+    const paths=[...deck.querySelectorAll('a.tile')].map(n=>n.getAttribute('href'));
+    const from=paths.indexOf(source),to=paths.indexOf(target);
+    if(from<0||to<0)return;paths.splice(from,1);paths.splice(to,0,source);
+    sizes[orderKey]=paths;draggingDepartmentTile=null;draw();layoutMsg('부서 블록 순서 변경됨. 내 블록 배치 저장을 눌러 주세요.');
+   };
+  }
   for(const t of tiles){const authorized=superUser||granted.has(t.getAttribute('href'));t.hidden=!authorized;t.style.display=authorized?'flex':'none';}
   const visible=tiles.some(t=>!t.hidden);
   x.style.display=profile&&visible?'block':'none';
@@ -163,3 +187,5 @@ $('wsLogout').onclick=async()=>{if(sb)await sb.auth.signOut();hide();say('로그
 })();</script></main><script src="./common/pointer-wheel.js" defer></script>
 </body></html>
 <!-- 진일 통합관리 / 2026-11-24 / 일반회원 블록 허용목록 필터 적용 / 기존 배치·원본 보존 -->
+
+<!-- 2026-11-24: 개인별 부서 블록 순서를 기존 Supabase jinil_user_layout.expanded에 함께 저장. 원본 백업 보존. -->
