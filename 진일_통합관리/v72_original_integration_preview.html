@@ -1588,6 +1588,50 @@ html,body{overscroll-behavior-y:auto!important}
  #adminScreen .admin-table{min-width:610px}
  #adminScreen .admin-top h1{font-size:20px}
 }
+</style><style id="jinil-tree-final-20261124">
+#adminScreen{max-width:none!important;padding:12px!important}
+#adminScreen .jt-shell{display:grid;grid-template-columns:210px minmax(0,1fr);background:#f7f9fc;border:1px solid #cbd8e7;border-radius:14px;overflow:hidden;min-height:80vh}
+#adminScreen .jt-sidebar{background:#182d49;color:#fff;padding:22px 12px}
+#adminScreen .jt-sidebar h2{font-size:17px;color:#fff;margin:3px 5px}
+#adminScreen .jt-sidebar small{display:block;color:#c7d7ea;margin:7px 5px 30px}
+#adminScreen .jt-sidebar nav{display:grid;gap:6px}
+#adminScreen .jt-sidebar nav button{background:transparent;border:0;border-radius:8px;text-align:left;font:inherit;font-size:13px;font-weight:700;padding:13px 12px;color:#d5e4f5;cursor:pointer}
+#adminScreen .jt-sidebar nav button.active,#adminScreen .jt-sidebar nav button:hover{background:#1977ef;color:#fff}
+#adminScreen .jt-sidebar p{border:1px solid #9979bb;color:#e8d1ff;border-radius:8px;padding:10px;margin-top:28px;font-size:11px}
+#adminScreen .jt-main{min-width:0}
+#adminScreen .admin-top{margin:0!important;padding:18px 20px;background:#fff;border-bottom:1px solid #d9e3ee;flex-wrap:wrap}
+#adminScreen .admin-content{padding:14px!important;background:transparent!important;border:0!important;box-shadow:none!important;min-width:0}
+#adminScreen .jt-pane,#adminScreen .jt-tab{display:none}
+#adminScreen .jt-pane.active,#adminScreen .jt-tab.active{display:block}
+#adminScreen .jt-grid{display:grid;grid-template-columns:minmax(220px,32%) minmax(0,1fr);gap:14px}
+#adminScreen .jt-tree,#adminScreen .jt-work{background:#fff;border:1px solid #d9e3ee;border-radius:12px;padding:16px;min-width:0}
+#adminScreen .jt-tree h3{margin:0 0 14px;color:#233d5f;font-size:19px}
+#adminScreen .jt-folder-title{display:block;width:100%;border:0;background:transparent;text-align:left;color:#304763;padding:10px 5px;font-weight:800;cursor:pointer}
+#adminScreen .jt-files{margin:0 0 8px 18px;padding-left:9px;border-left:1px solid #dfe8f0}
+#adminScreen .jt-files button{display:block;width:100%;border:0;background:transparent;border-radius:7px;padding:9px 5px;text-align:left;font:inherit;font-size:12px;color:#345575;cursor:pointer}
+#adminScreen .jt-files button.active,#adminScreen .jt-files button:hover{background:#dcecff}
+#adminScreen .jt-crumb{background:#f2f6fb;border-radius:8px;padding:12px;font-size:12px;color:#5a6f87}
+#adminScreen .jt-selected{display:flex;gap:13px;align-items:center;padding:16px 0}
+#adminScreen .jt-selected>span{font-size:32px;color:#1977ef}
+#adminScreen .jt-selected h2{font-size:20px;color:#263c58;margin:0}
+#adminScreen .jt-selected p{font-size:12px;color:#728198;margin:5px 0 0}
+#adminScreen .jt-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid #dbe5ef;border-radius:8px;overflow:hidden;margin-bottom:14px}
+#adminScreen .jt-tabs button{font:inherit;font-size:12px;font-weight:800;border:0;border-right:1px solid #dbe5ef;padding:12px 4px;background:#f5f8fc;cursor:pointer}
+#adminScreen .jt-tabs button.active{background:#1977ef;color:#fff}
+#adminScreen .jt-upload{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(170px,1fr);gap:12px}
+#adminScreen .jt-filebox{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;text-align:center;border:2px dashed #bdcce0;border-radius:9px;padding:20px 10px;min-height:150px;background:#fafcff}
+#adminScreen .jt-filebox small{color:#6e7f94}
+#adminScreen .jt-mode{border:1px solid #dde6f1;border-radius:9px;padding:15px;background:#f9fbfe}
+#adminScreen .jt-mode label{display:block;font-size:12px;margin:12px 0}
+#adminScreen .jt-warning{color:#714f9e;background:#fbf7ff;border:1px solid #dfcdf3;border-radius:9px;padding:11px;margin-top:13px;font-size:12px;line-height:1.6}
+#adminScreen .jt-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+#adminScreen .jt-settings .jinil-admin-security{grid-column:span 2}
+#adminScreen .jinil-admin-card{min-width:0;padding:15px;background:#fff;border:1px solid #dce5ef;border-radius:9px}
+#adminScreen .jt-tab .jinil-admin-update{margin-bottom:13px}
+#adminScreen .admin-table-wrap{max-width:100%;overflow-x:auto}
+#adminScreen [hidden]{display:none!important}
+@media(max-width:1070px){#adminScreen .jt-shell{grid-template-columns:1fr}#adminScreen .jt-sidebar{padding:12px}#adminScreen .jt-sidebar nav{grid-template-columns:repeat(4,minmax(0,1fr))}#adminScreen .jt-sidebar nav button{font-size:11px;padding:10px 4px;text-align:center}#adminScreen .jt-sidebar p{display:none}}
+@media(max-width:700px){#adminScreen .jt-grid,#adminScreen .jt-upload,#adminScreen .jt-settings{grid-template-columns:1fr}#adminScreen .jt-settings .jinil-admin-security{grid-column:1}#adminScreen .jt-tree{max-height:260px;overflow:auto}#adminScreen .jt-tabs button{font-size:10px}}
 </style></head>
 <body>
 <div id="jinil-live-gate" role="dialog" aria-modal="true" aria-label="V72 Supabase 로그인"><div class="panel">
@@ -3369,7 +3413,30 @@ window.addEventListener('keydown',e=>{if(!isAdminUser()){clear();return}if(e.key
  const normalize=v=>({'본사 총무':'총무부','생산동':'생산부','가공동':'가공부','테프론동':'테프론부'}[v]||v||'');
 function jinilWheelHtml(html){
  const script='<script src="'+new URL('./common/pointer-wheel.js',location.href).href+'"><'+'/script>';
- return /<\/body\s*>/i.test(html)?html.replace(/<\/body\s*>/i,script+'</body>'):html+script;
+ return /<\/body\s*>/i.test(html)?html.replace(/<\/body\s*>/i,script+'<script id="jinil-tree-runtime-20261124">(function(){
+const sc=document.getElementById('adminScreen'),g=sc&&sc.querySelector('.jinil-admin-grid');if(!sc||!g||sc.dataset.jt)return;sc.dataset.jt='1';
+const mk=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
+const content=sc.querySelector('.admin-content'),top=sc.querySelector('.admin-top'),dialog=content.querySelector('#supabaseSettingsModal');
+if(!dialog)return;const shell=mk('div','jt-shell'),side=mk('aside','jt-sidebar'),main=mk('div','jt-main');
+side.innerHTML='<h2>⚙ 진일 통합관리</h2><small>슈퍼관리자 모드</small><nav aria-label="관리자 메뉴"></nav><p>개발용 화면 · 정식 배포 전</p>';
+const panes={};[['blocks','▱ 블록 관리'],['updates','⬆ 업데이트 관리'],['members','♙ 회원 · 권한 관리'],['settings','⚙ 설정']].forEach(([k,title],i)=>{const nav=mk('button',i===0?'active':'',title),pane=mk('section','jt-pane'+(i===0?' active':''));nav.type='button';nav.onclick=()=>{side.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));nav.classList.add('active');Object.values(panes).forEach(x=>x.classList.remove('active'));pane.classList.add('active')};side.querySelector('nav').append(nav);panes[k]=pane});
+const grid=mk('div','jt-grid'),tree=mk('aside','jt-tree'),work=mk('div','jt-work');tree.append(mk('h3',null,'📁 전체 블록'));const folders=mk('div','jt-folders');tree.append(folders);
+const crumb=mk('div','jt-crumb','전체 블록'),heading=mk('div','jt-selected');heading.append(mk('span',null,'▤'));const hbox=mk('div'),selected=mk('h2',null,'블록을 선택해 주세요'),detail=mk('p',null,'왼쪽 부서 트리에서 선택하세요');hbox.append(selected,detail);heading.append(hbox);work.append(crumb,heading);
+const tabbar=mk('div','jt-tabs');tabbar.setAttribute('role','tablist');const tabs={};[['upload','업데이트'],['main','메인 블록'],['types','블록 종류'],['preview','미리보기']].forEach(([k,name],i)=>{const nav=mk('button',i===0?'active':'',name),pane=mk('section','jt-tab'+(i===0?' active':''));nav.type='button';nav.onclick=()=>{tabbar.querySelectorAll('button').forEach(x=>x.classList.remove('active'));nav.classList.add('active');Object.values(tabs).forEach(x=>x.classList.remove('active'));pane.classList.add('active')};tabbar.append(nav);tabs[k]=pane});work.append(tabbar);Object.values(tabs).forEach(x=>work.append(x));
+const card=k=>g.querySelector('.jinil-admin-'+k);
+tabs.upload.append(card('update'));tabs.main.append(card('main'));tabs.types.append(card('types'));
+const upload=mk('div','jt-upload'),filebox=mk('div','jt-filebox'),mode=mk('div','jt-mode');
+filebox.innerHTML='<strong>☁ 수정한 HTML 파일 선택</strong><small>파일 등록은 업데이트 센터에서 진행합니다.</small><input type="file" accept=".html,.htm" hidden><button type="button" class="btn primary">파일 선택</button><small>선택된 파일 없음</small>';
+const file=filebox.querySelector('input');filebox.querySelector('button').onclick=()=>file.click();file.onchange=()=>filebox.lastElementChild.textContent=file.files?.[0]?.name||'선택된 파일 없음';
+mode.innerHTML='<strong>업데이트 방식</strong><label><input name="jt-update" type="radio" checked> 개별 블록 업데이트</label><label><input name="jt-update" type="radio"> 전체 HTML 기준 검토</label>';
+upload.append(filebox,mode);tabs.upload.append(upload,mk('p','jt-warning','파일 선택만으로 업로드되지 않습니다. 실제 등록·테스트·배포·복구는 위 업데이트 센터에서 진행합니다.'));
+tabs.preview.append(mk('h3',null,'테스트 블록 미리보기'),mk('p',null,'업데이트 센터에서 등록한 테스트 버전을 확인합니다.'));const preview=mk('a','btn','슈퍼관리자 업데이트 센터 열기');preview.href='./super_admin_updates.html';preview.target='_blank';preview.rel='noopener';tabs.preview.append(preview);
+grid.append(tree,work);panes.blocks.append(grid);panes.updates.append(mk('h2',null,'업데이트 관리'));const link=mk('a','btn primary','업데이트 센터 열기');link.href='./super_admin_updates.html';link.target='_blank';link.rel='noopener';panes.updates.append(link);panes.members.append(card('members'));
+const settings=mk('div','jt-settings');settings.append(card('supabase'),card('push'),card('security'));panes.settings.append(settings);
+const oldContainer=g.parentElement;content.insertBefore(shell,oldContainer);shell.append(side,main);main.append(top);const inner=mk('div','admin-content');main.append(inner);Object.values(panes).forEach(x=>inner.append(x));inner.append(dialog);oldContainer.remove();
+let signature='';function draw(){const blocks=(typeof state!=='undefined'&&Array.isArray(state.blocks))?state.blocks:[],sig=JSON.stringify(blocks.map(x=>[x.id,x.name]));if(sig===signature)return;signature=sig;folders.replaceChildren();let first=null;for(const name of ['총무부','생산부','테프론부','가공부','기타블록']){const box=mk('div','jt-folder'),title=mk('button','jt-folder-title','▾ 📁 '+name),files=mk('div','jt-files');title.type='button';title.onclick=()=>{files.hidden=!files.hidden;title.textContent=(files.hidden?'▸':'▾')+' 📁 '+name};box.append(title,files);const group=blocks.filter(x=>name==='기타블록'?!['총무부','생산부','테프론부','가공부'].includes(x.name):x.name===name);group.forEach(x=>{const btn=mk('button',null,'▤ '+x.name+'.html');btn.type='button';btn.onclick=()=>{folders.querySelectorAll('.jt-files button').forEach(e=>e.classList.remove('active'));btn.classList.add('active');crumb.textContent='전체 블록  ›  '+name+'  ›  '+x.name+'.html';selected.textContent=x.name+'.html';detail.textContent='부서: '+name+'  |  버전은 업데이트 센터에서 확인';};files.append(btn);if(!first)first=btn});if(!group.length)files.append(mk('small',null,'등록된 블록 없음'));folders.append(box)}if(first)first.click()}
+new MutationObserver(()=>{if(!sc.hidden)draw()}).observe(sc,{attributes:true,attributeFilter:['hidden']});draw();
+})();</script></body>'):html+script;
 }
  const testPanel=LIVE_ID('jinil-test-blocks'),testItems=LIVE_ID('jinil-test-items');
  const viewer=LIVE_ID('jinil-test-viewer'),frame=LIVE_ID('jinil-test-frame');
