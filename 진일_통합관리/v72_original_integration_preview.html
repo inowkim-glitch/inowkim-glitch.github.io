@@ -1524,6 +1524,70 @@ body:not(.jinil-live-authorized) .shell{visibility:hidden!important}
 /* Desktop admin scroll: prevent overscroll containment from swallowing wheel input. */
 html,body{overscroll-behavior-y:auto!important}
 #adminScreen{overscroll-behavior-y:auto;touch-action:pan-y}
+</style><style id="jinil-v72-admin-responsive-redesign">
+/* Admin-only layout: no changes to dashboard, department modules or data stores. */
+#adminScreen.admin-screen{max-width:1660px;padding:22px clamp(12px,2.2vw,36px) 56px}
+#adminScreen .admin-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+#adminScreen .admin-top h1{font-size:clamp(21px,2.15vw,29px);letter-spacing:-.6px}
+#adminScreen .admin-content{background:#f5f8f6;border:1px solid #dee9df;padding:clamp(13px,1.7vw,24px);box-shadow:0 12px 35px #173f2420}
+#adminScreen .jinil-admin-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;align-items:stretch}
+#adminScreen .jinil-admin-grid>*{min-width:0}
+#adminScreen .jinil-admin-overview{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px 20px;border-radius:15px;background:linear-gradient(100deg,#1d4a34,#2d6549);color:#fff;padding:19px 24px}
+#adminScreen .jinil-admin-eyebrow{font-size:10px;letter-spacing:2px;color:#bbdec6;font-weight:800}
+#adminScreen .jinil-admin-overview h2{font-size:22px;color:white;margin:5px 0}
+#adminScreen .jinil-admin-overview p{margin:0;font-size:13px;color:#e1eee4}
+#adminScreen .jinil-admin-preview-flag{display:inline-flex;white-space:nowrap;background:#ffffff22;border:1px solid #ffffff45;padding:9px 12px;border-radius:999px;font-size:12px;color:white}
+#adminScreen .jinil-admin-card{background:white;border:1px solid #d9e6dc;border-radius:15px;padding:19px 20px;box-shadow:0 3px 13px #25442a0b;min-width:0}
+#adminScreen .jinil-admin-update{grid-column:span 12}
+#adminScreen .jinil-admin-main{grid-column:span 12}
+#adminScreen .jinil-admin-types{grid-column:span 5}
+#adminScreen .jinil-admin-members{grid-column:span 7}
+#adminScreen .jinil-admin-supabase{grid-column:span 4}
+#adminScreen .jinil-admin-push{grid-column:span 5}
+#adminScreen .jinil-admin-security{grid-column:span 3}
+#adminScreen .admin-toolbar{margin:0 0 13px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#adminScreen .admin-toolbar h2{font-size:18px;font-weight:800;color:#204e38}
+#adminScreen .admin-config{margin:0;padding:0;border:0;border-radius:0;background:transparent}
+#adminScreen .admin-config h3{font-size:17px;color:#204e38;margin:0 0 12px}
+#adminScreen .jinil-admin-update-panel{border:0;background:transparent;border-radius:0;padding:0;margin:0}
+#adminScreen .jinil-admin-update-panel h2{font-size:18px;color:#204e38;margin:0 0 7px}
+#adminScreen .jinil-admin-update-panel p{line-height:1.55}
+#adminScreen #jinil-open-update-center{margin-top:5px}
+#adminScreen .admin-table-wrap{max-width:100%;overflow-x:auto;border:1px solid #e1eae2;border-radius:10px;scrollbar-width:thin}
+#adminScreen .admin-table{width:100%;min-width:610px;border-collapse:collapse}
+#adminScreen .admin-table th{background:#eaf2eb;white-space:nowrap;font-weight:750}
+#adminScreen .admin-table td{vertical-align:middle;line-height:1.35}
+#adminScreen .admin-table th,#adminScreen .admin-table td{padding:11px 12px;font-size:12px}
+#adminScreen .admin-table tbody tr:nth-child(even){background:#fbfcfb}
+#adminScreen .admin-table tbody tr:hover{background:#f1f7f2}
+#adminScreen .admin-table td:last-child{min-width:170px}
+#adminScreen .admin-table td .btn{white-space:nowrap;padding:7px 9px;margin:3px 3px 3px 0}
+#adminScreen .jinil-admin-security>p{font-size:12px;color:#69776e;line-height:1.55;margin:7px 0 0!important}
+#adminScreen .jinil-admin-security .admin-toolbar{display:grid;justify-items:start}
+#adminScreen .jinil-admin-security #adminChangePassword{white-space:normal;text-align:center;line-height:1.4;max-width:100%}
+#adminScreen .jinil-admin-supabase #supabaseConfigStatus{overflow-wrap:anywhere}
+#adminScreen .jinil-admin-push label{font-size:12px}
+#adminScreen .jinil-admin-push input,#adminScreen .jinil-admin-push select,#adminScreen .jinil-admin-push textarea{width:100%;box-sizing:border-box}
+#adminScreen .jinil-admin-card .btn{max-width:100%}
+#adminScreen .jinil-admin-card .btn:focus-visible,#adminScreen .admin-top button:focus-visible{outline:3px solid #83bc96;outline-offset:2px}
+@media(max-width:1199px){
+ #adminScreen .jinil-admin-types,#adminScreen .jinil-admin-members{grid-column:span 6}
+ #adminScreen .jinil-admin-supabase,#adminScreen .jinil-admin-push,#adminScreen .jinil-admin-security{grid-column:span 6}
+ #adminScreen .jinil-admin-security{grid-column:span 12}
+}
+@media(max-width:760px){
+ #adminScreen.admin-screen{padding:12px 9px 35px}
+ #adminScreen .admin-content{padding:10px;border-radius:13px}
+ #adminScreen .jinil-admin-grid{grid-template-columns:minmax(0,1fr);gap:11px}
+ #adminScreen .jinil-admin-grid>*{grid-column:1/-1!important}
+ #adminScreen .jinil-admin-overview{padding:15px 16px;align-items:start}
+ #adminScreen .jinil-admin-overview h2{font-size:19px}
+ #adminScreen .jinil-admin-card{padding:14px 12px}
+ #adminScreen .admin-toolbar h2{font-size:16px}
+ #adminScreen .admin-toolbar .btn{font-size:12px;padding:9px 11px}
+ #adminScreen .admin-table{min-width:610px}
+ #adminScreen .admin-top h1{font-size:20px}
+}
 </style></head>
 <body>
 <div id="jinil-live-gate" role="dialog" aria-modal="true" aria-label="V72 Supabase 로그인"><div class="panel">
@@ -1554,12 +1618,12 @@ html,body{overscroll-behavior-y:auto!important}
 <p style="font-size:11px;line-height:1.5;color:#647d6c">흐릿한 블록은 슈퍼관리자만 테스트할 수 있으며 회원에게 공개되지 않습니다.</p>
 </section><section id="jinil-live-other-blocks" hidden aria-label="사용 가능한 기타블록"><h3>기타블록</h3><div id="jinil-live-other-items"></div></section><button class="add" id="addBtn">＋ 새로운 블럭 추가</button><p class="footnote">현재는 디자인 시안입니다.<br>블록 페이지에는 추후 기능을 연결합니다.</p></aside>
 </main>
-<section id="adminScreen" class="admin-screen" hidden><div class="admin-top"><button class="back" id="adminBack" type="button">← 메인으로 돌아가기</button><h1>통합 관리자 페이지 <small>ADMIN MANAGEMENT</small></h1></div><div class="admin-content"><section style="padding:16px;margin-bottom:20px;border:1px solid #b9d4c2;border-radius:12px;background:#f3f9f4">
+<section id="adminScreen" class="admin-screen" hidden><div class="admin-top"><button class="back" id="adminBack" type="button">← 메인으로 돌아가기</button><h1>통합 관리자 페이지 <small>ADMIN MANAGEMENT</small></h1></div><div class="admin-content"><div class="jinil-admin-grid"><div class="jinil-admin-overview"><div><span class="jinil-admin-eyebrow">SUPER ADMIN · CONTROL CENTER</span><h2>통합 운영 관리</h2><p>블록 구성, 회원, 연동, 보안 설정을 한 화면에서 관리합니다.</p></div><span class="jinil-admin-preview-flag">V72 개발 · 미리보기</span></div><article class="jinil-admin-card jinil-admin-update"><section class="jinil-admin-update-panel">
 <h2 style="margin:0 0 8px">블록 업데이트 관리</h2>
 <p style="font-size:13px;margin:0 0 10px">부서 블록 26개 및 기타블록 3개(CAD 3D·메모·캡처): HTML 등록 → 테스트 → 승인 → 배포 대상 지정 → 이전 버전 복구</p>
 <a id="jinil-open-update-center" href="./super_admin_updates.html" target="_blank" rel="noopener" style="display:inline-block;background:#20543a;color:white;padding:10px 15px;border-radius:8px;text-decoration:none;font-weight:700">슈퍼관리자 업데이트 센터 열기</a>
 <p style="font-size:12px;color:#806330;margin:10px 0 0">주의: 별도 업데이트 센터는 Supabase 버전 포인터를 관리합니다. V72 원본 메인 블록과의 자동 연결은 아직 통합·검증되지 않았습니다.</p>
-</section><div class="admin-toolbar"><h2>메인 블록 관리</h2><button class="btn primary" id="adminAddMain" type="button">+ 메인 블록 추가</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>블록 이름</th><th>종류</th><th>배치 위치</th><th>관리</th></tr></thead><tbody id="adminMainRows"></tbody></table></div><div class="admin-toolbar"><h2>블록 종류 관리</h2><button class="btn primary" id="adminAddType" type="button">+ 종류 추가</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>종류 이름</th><th>구분</th><th>관리</th></tr></thead><tbody id="adminTypeRows"></tbody></table></div><section class="admin-config"><h3>회원 계정 관리</h3><p style="color:#b42318;font-size:12px">긴급 복구는 관리자 승인 후 8자리 임시 비밀번호로 진행하는 로컬 테스트 기능입니다. 실제 운영에는 추가 본인 인증이 필요합니다. 승인 후 10시간 또는 비밀번호 변경 시 즉시 종료됩니다. 실제 이메일 발송은 서버 연동 전에는 지원되지 않습니다.</p><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>이메일</th><th>권한 / 복구 상태</th><th>관리</th></tr></thead><tbody id="adminMemberRows"></tbody></table></div></section><section class="admin-config"><h3>Supabase 연결 설정</h3><p>URL과 공개용 KEY는 이 브라우저에 저장되어 다음 로그인과 업데이트 센터에서 자동 사용됩니다.</p><button class="btn primary" id="openSupabaseSettings" type="button">⚙ Supabase 연결 설정 변경</button><p id="supabaseConfigStatus" style="font-size:12px;color:#486c56"></p></section><dialog id="supabaseSettingsModal"><div class="modal" style="max-width:540px"><h2>Supabase 연결 설정</h2><p>슈퍼관리자 전용입니다. 공개용 anon / publishable KEY만 저장하세요. <b>service_role·secret 키는 금지</b>입니다.</p><label for="supabaseUrl">Supabase URL</label><div class="admin-field-row"><input class="control" id="supabaseUrl" type="password" autocomplete="off"><button class="btn" type="button" id="showSupabaseUrl">표시</button></div><label for="supabaseKey">Supabase 공개용 KEY</label><div class="admin-field-row"><input class="control" id="supabaseKey" type="password" autocomplete="off"><button class="btn" type="button" id="showSupabaseKey">표시</button></div><div class="actions"><button class="btn" id="closeSupabaseSettings" type="button">취소</button><button class="btn primary" id="saveSupabase" type="button">연결 정보 저장</button></div><p style="font-size:12px;color:#637464">이 기기와 같은 웹 주소에서만 설정이 유지됩니다. 다른 기기에는 별도 저장이 필요합니다. 저장 후 다음 로그인에 적용됩니다.</p></div></dialog><section class="admin-config"><h3>푸시 알림 관리</h3><p>향후 inowkim-glitch.github.io의 푸시 기능과 연결할 관리자 전용 설정 화면입니다. 현재 발송 기능은 연결 전입니다.</p><label for="pushAudience">알림 대상</label><select id="pushAudience"><option value="all">전체 회원</option></select><label for="pushTitle">알림 제목</label><input id="pushTitle" placeholder="알림 제목"><label for="pushBody">알림 내용</label><textarea id="pushBody" rows="3" placeholder="전달할 내용을 입력하세요"></textarea><button class="btn" type="button" id="pushPreview">발송 전 미리보기</button><button class="btn" type="button" disabled title="서버 연동 후 사용">푸시 발송 (연동 대기)</button><p>발송 내역과 기기 등록 현황은 서버 연동 후 표시됩니다.</p></section><div class="admin-toolbar"><h2>관리자 설정</h2><button class="btn" id="adminChangePassword" type="button">슈퍼관리자 6자리 PIN 등록·변경</button></div><p style="font-size:12px;color:#6d756f;margin:4px 0">관리자 모드 진입용 추가 확인 PIN입니다. Supabase 계정 비밀번호는 변경하지 않습니다.</p></div></section><section class="detail-screen" id="detail"><div class="detail-top"><button class="back" id="back">← 메인으로 돌아가기</button><span id="detailBreadcrumb"></span></div><div class="detail-grid"><section class="workspace detail-workspace"><div class="section-head"><div class="workspace-heading"><h1 class="section-title" id="detailName">메인 블록 배치 공간</h1><span class="eyebrow">WORKSPACE</span></div><span class="count" id="detailCount">업무 기능 페이지</span></div><div class="detail-canvas" id="detailCanvas"><div class="detail-placeholder">준비중</div></div></section><aside class="sidebar detail-sidebar"><div class="eyebrow">BLOCK LIBRARY</div><h2 class="side-title">블록 목록</h2><p class="side-hint">업무 기능을 선택하세요. 해당 기능을 이 공간에서 실행합니다.</p><div id="detailSourceList" class="side-list"></div><button class="add" id="detailAddBtn" type="button">＋ 새로운 블록 추가</button><p class="footnote">기능 화면은 순차적으로 추가됩니다.</p></aside></div></section>
+</section></article><article class="jinil-admin-card jinil-admin-main"><div class="admin-toolbar"><h2>메인 블록 관리</h2><button class="btn primary" id="adminAddMain" type="button">+ 메인 블록 추가</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>블록 이름</th><th>종류</th><th>배치 위치</th><th>관리</th></tr></thead><tbody id="adminMainRows"></tbody></table></div></article><article class="jinil-admin-card jinil-admin-types"><div class="admin-toolbar"><h2>블록 종류 관리</h2><button class="btn primary" id="adminAddType" type="button">+ 종류 추가</button></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>종류 이름</th><th>구분</th><th>관리</th></tr></thead><tbody id="adminTypeRows"></tbody></table></div></article><article class="jinil-admin-card jinil-admin-members"><section class="admin-config"><h3>회원 계정 관리</h3><p style="color:#b42318;font-size:12px">긴급 복구는 관리자 승인 후 8자리 임시 비밀번호로 진행하는 로컬 테스트 기능입니다. 실제 운영에는 추가 본인 인증이 필요합니다. 승인 후 10시간 또는 비밀번호 변경 시 즉시 종료됩니다. 실제 이메일 발송은 서버 연동 전에는 지원되지 않습니다.</p><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>이메일</th><th>권한 / 복구 상태</th><th>관리</th></tr></thead><tbody id="adminMemberRows"></tbody></table></div></section></article><article class="jinil-admin-card jinil-admin-supabase"><section class="admin-config"><h3>Supabase 연결 설정</h3><p>URL과 공개용 KEY는 이 브라우저에 저장되어 다음 로그인과 업데이트 센터에서 자동 사용됩니다.</p><button class="btn primary" id="openSupabaseSettings" type="button">⚙ Supabase 연결 설정 변경</button><p id="supabaseConfigStatus" style="font-size:12px;color:#486c56"></p></section></article><article class="jinil-admin-card jinil-admin-push"><section class="admin-config"><h3>푸시 알림 관리</h3><p>향후 inowkim-glitch.github.io의 푸시 기능과 연결할 관리자 전용 설정 화면입니다. 현재 발송 기능은 연결 전입니다.</p><label for="pushAudience">알림 대상</label><select id="pushAudience"><option value="all">전체 회원</option></select><label for="pushTitle">알림 제목</label><input id="pushTitle" placeholder="알림 제목"><label for="pushBody">알림 내용</label><textarea id="pushBody" rows="3" placeholder="전달할 내용을 입력하세요"></textarea><button class="btn" type="button" id="pushPreview">발송 전 미리보기</button><button class="btn" type="button" disabled title="서버 연동 후 사용">푸시 발송 (연동 대기)</button><p>발송 내역과 기기 등록 현황은 서버 연동 후 표시됩니다.</p></section></article><article class="jinil-admin-card jinil-admin-security"><div class="admin-toolbar"><h2>관리자 설정</h2><button class="btn" id="adminChangePassword" type="button">슈퍼관리자 6자리 PIN 등록·변경</button></div><p style="font-size:12px;color:#6d756f;margin:4px 0">관리자 모드 진입용 추가 확인 PIN입니다. Supabase 계정 비밀번호는 변경하지 않습니다.</p></article></div><dialog id="supabaseSettingsModal"><div class="modal" style="max-width:540px"><h2>Supabase 연결 설정</h2><p>슈퍼관리자 전용입니다. 공개용 anon / publishable KEY만 저장하세요. <b>service_role·secret 키는 금지</b>입니다.</p><label for="supabaseUrl">Supabase URL</label><div class="admin-field-row"><input class="control" id="supabaseUrl" type="password" autocomplete="off"><button class="btn" type="button" id="showSupabaseUrl">표시</button></div><label for="supabaseKey">Supabase 공개용 KEY</label><div class="admin-field-row"><input class="control" id="supabaseKey" type="password" autocomplete="off"><button class="btn" type="button" id="showSupabaseKey">표시</button></div><div class="actions"><button class="btn" id="closeSupabaseSettings" type="button">취소</button><button class="btn primary" id="saveSupabase" type="button">연결 정보 저장</button></div><p style="font-size:12px;color:#637464">이 기기와 같은 웹 주소에서만 설정이 유지됩니다. 다른 기기에는 별도 저장이 필요합니다. 저장 후 다음 로그인에 적용됩니다.</p></div></dialog></div></section><section class="detail-screen" id="detail"><div class="detail-top"><button class="back" id="back">← 메인으로 돌아가기</button><span id="detailBreadcrumb"></span></div><div class="detail-grid"><section class="workspace detail-workspace"><div class="section-head"><div class="workspace-heading"><h1 class="section-title" id="detailName">메인 블록 배치 공간</h1><span class="eyebrow">WORKSPACE</span></div><span class="count" id="detailCount">업무 기능 페이지</span></div><div class="detail-canvas" id="detailCanvas"><div class="detail-placeholder">준비중</div></div></section><aside class="sidebar detail-sidebar"><div class="eyebrow">BLOCK LIBRARY</div><h2 class="side-title">블록 목록</h2><p class="side-hint">업무 기능을 선택하세요. 해당 기능을 이 공간에서 실행합니다.</p><div id="detailSourceList" class="side-list"></div><button class="add" id="detailAddBtn" type="button">＋ 새로운 블록 추가</button><p class="footnote">기능 화면은 순차적으로 추가됩니다.</p></aside></div></section>
 </div>
 <dialog id="editor"><form class="modal" id="editForm"><h2 id="modalTitle">새로운 블럭 추가</h2><p>블록 종류를 선택하고 이름을 입력하세요.</p><div class="type-heading"><label class="field" for="blockType">블록 종류</label><button type="button" id="addType" class="type-plus" title="관리자: 블록 종류 추가">＋</button></div><select class="control" id="blockType" required></select><p id="typeLockedHint" class="type-locked-hint" hidden>생성된 블록은 종류를 변경할 수 없습니다. 이름만 수정할 수 있습니다.</p><label class="field" for="blockName">블록 이름</label><input class="control" id="blockName" maxlength="35" placeholder="예: 발주 현황" required autocomplete="off"><div class="actions"><button type="button" class="btn" id="cancel">취소</button><button class="btn primary" type="submit" id="saveBtn">추가하기</button></div></form></dialog>
 <dialog id="colorDialog"><div class="modal">
