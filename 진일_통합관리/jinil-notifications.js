@@ -1,7 +1,7 @@
 /* JINIL V76: user-scoped dispatch notifications. */
 (function(){
 "use strict";
-let sb=null,uid="",subscription=null,interval=null,known=new Set(),rows=[],loaded=false,centralTimer=0;
+let sb=null,uid="",subscription=null,interval=null,blockObserver=null,known=new Set(),rows=[],loaded=false,centralTimer=0;
 const el=id=>document.getElementById(id);
 const defaults={center:true,corner:true,sound:false};
 function getPrefs(){try{return Object.assign({},defaults,JSON.parse(localStorage.getItem("jinil-notice-prefs-v76")||"{}"))}catch{return Object.assign({},defaults)}}
@@ -63,12 +63,13 @@ async function registerPush(){
  }catch(err){status("푸시 설정 실패: "+String(err.message||err).slice(0,150))}
 }
 function stop(){
- if(subscription&&sb)sb.removeChannel(subscription).catch(()=>{});subscription=null;if(interval)clearInterval(interval);interval=null;clearTimeout(centralTimer);sb=null;uid="";known.clear();rows=[];loaded=false;
+ if(subscription&&sb)sb.removeChannel(subscription).catch(()=>{});subscription=null;if(interval)clearInterval(interval);interval=null;if(blockObserver){blockObserver.disconnect();blockObserver=null}clearTimeout(centralTimer);sb=null;uid="";known.clear();rows=[];loaded=false;
  ["jinil-alert-controls","jinil-alert-central","jinil-alert-corner"].forEach(id=>el(id)?.remove());
  document.querySelectorAll(".jinil-unread-block").forEach(e=>e.classList.remove("jinil-unread-block"));
 }
 async function start({client,user}){
  if(!client||!user?.id)return;stop();sb=client;uid=user.id;prefs=getPrefs();ui();await refresh(false);if(!uid)return;
+ blockObserver=new MutationObserver(()=>paint());for(const node of [document.getElementById("canvas"),document.getElementById("sourceList")])if(node)blockObserver.observe(node,{childList:true,subtree:true});
  subscription=sb.channel("jinil-notify-"+uid).on("postgres_changes",{event:"INSERT",schema:"public",table:"jinil_notifications",filter:"user_id=eq."+uid},()=>refresh(true)).on("postgres_changes",{event:"UPDATE",schema:"public",table:"jinil_notifications",filter:"user_id=eq."+uid},()=>refresh(false)).subscribe();
  interval=setInterval(()=>{if(!document.hidden)refresh(true)},30000);
 }
