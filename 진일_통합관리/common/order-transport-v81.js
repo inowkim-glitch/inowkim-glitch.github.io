@@ -34,7 +34,7 @@ async function sendOne(sb,k,order) {
    throw Error("기존 서버 발주와 식별정보가 일치하지 않아 중단했습니다.");
  }else{
   // Entire V72 business object is retained; attachment data is not silently stripped.
-  const payload={...order,jinil_source_id:identity,jinil_original_order_no:String(order.orderNo||""),jinil_source_department:String(k)};
+  const payload={...order,order_no:String(order.orderNo||order.seq||number),jinil_source_id:identity,jinil_original_order_no:String(order.orderNo||""),jinil_source_department:String(k)};
   const saved=await createOrder(sb,{orderNumber:number,payload});
   original={id:saved.id,created_by:userData.user.id,payload};
  }
