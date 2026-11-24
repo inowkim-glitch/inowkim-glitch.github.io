@@ -4,7 +4,7 @@
  * Batch sends keep original business button; Supabase RLS decides permissions.
  * Do not silently mark local orders "sent" before database confirms dispatch.
  */
-import {createOrder,sendOrder} from "../../integration/jinil-supabase-orders-adapter-v1.js";
+import {createOrder,sendOrder,loadDepartmentQueue,transitionOrder} from "../../integration/jinil-supabase-orders-adapter-v1.js";
 const validDepartments=new Set(["생산부","가공부","테프론부"]);
 function departmentOf(raw) {
  const s=String(raw??"").trim();
@@ -53,4 +53,72 @@ export async function sendPending(sb,pending) {
   catch(e){failed.push({sourceKey:String(key),sourceId:String(order?.id||""),message:String(e?.message||e).slice(0,230)})}
  }
  return {done,failed};
+}
+
+
+/* Server queue read overlay for ORIGINAL V72 UI. Never save remote-only rows locally. */
+let queueClient=null,queueRole="",queueDept="",queueWatch=null,queuePoll=null,queueGeneration=0,remoteRows=[],queueUpdate=null;
+const keysByDept={"생산부":"mc","가공부":"process","테프론부":"teflon"},statusMap={"대기":"working","확인":"checked","완료":"done"};
+function scope(role,department){let dept=departmentOf(department);return role==="super_admin"||dept==="총무부"?["생산부","가공부","테프론부"]:validDepartments.has(dept)?[dept]:["생산부","가공부","테프론부"]}
+export async function refreshQueue(notify=true){
+ if(!queueClient)return [];
+ const current=queueGeneration;
+ const groups=await Promise.all(scope(queueRole,queueDept).map(d=>loadDepartmentQueue(queueClient,{department:d})));
+ if(queueGeneration!==current)return [];
+ remoteRows=groups.flat();
+ if(notify&&queueUpdate)queueUpdate();
+ return remoteRows;
+}
+export function mergeRead(data){
+ if(!data||!queueClient)return data;
+ for(const row of remoteRows){
+  const key=keysByDept[row.department];if(!key)continue;
+  const existing=Object.values(data).flatMap(v=>Array.isArray(v?.orders)?v.orders:[]).find(o=>
+    String(o.jinilServerDispatchId||"")===String(row.id)||
+    (String(o.jinilServerOrderId||"")===String(row.order_id)&&departmentOf(o.department)===row.department));
+  const status=statusMap[row.status]||"working";
+  if(existing){existing.status=status;existing.dispatchState="sent";existing.jinilServerDispatchId=row.id;continue}
+  if(!data[key])data[key]={orders:[],stock:Array(10).fill("")};
+  if(!Array.isArray(data[key].orders))data[key].orders=[];
+  const p=row.order_summary&&typeof row.order_summary==="object"?row.order_summary:{};
+  data[key].orders.push({...p,id:"server-"+row.id,
+    orderNo:String(p.orderNo||p.jinil_original_order_no||p.order_no||row.order_id),
+    company:String(p.company||""),createdISO:p.createdISO||row.sent_at,dispatchedISO:row.sent_at,
+    status,statusHistory:Array.isArray(p.statusHistory)?p.statusHistory:[],
+    attachments:Array.isArray(p.attachments)?p.attachments:[],department:row.department==="생산부"?"MC":row.department,
+    dispatchState:"sent",jinilServerDispatchId:row.id,jinilServerOrderId:row.order_id,
+    __jinilRemoteOnly:true});
+ }
+ return data;
+}
+export function stripRemote(data){
+ if(!data||typeof data!=="object")return data;
+ const copy=JSON.parse(JSON.stringify(data));
+ for(const item of Object.values(copy))if(Array.isArray(item?.orders))item.orders=item.orders.filter(o=>!o.__jinilRemoteOnly);
+ return copy;
+}
+export async function advanceStatus(sb,order,next){
+ if(!order?.jinilServerDispatchId)throw Error("서버 발주 정보가 없습니다.");
+ if(next!=="done")throw Error("서버의 완료 취소는 현재 DB 상태 규칙에서 허용되지 않습니다. 서버 원본은 변경하지 않았습니다.");
+ if(order.status==="working")await transitionOrder(sb,{dispatchId:order.jinilServerDispatchId,expectedStatus:"대기",nextStatus:"확인"});
+ else if(order.status!=="checked")throw Error("완료 처리할 수 없는 상태입니다.");
+ await transitionOrder(sb,{dispatchId:order.jinilServerDispatchId,expectedStatus:"확인",nextStatus:"완료"});
+ await refreshQueue(false);
+ return true;
+}
+export function stopQueue(){
+ queueGeneration++;
+ if(queuePoll)clearInterval(queuePoll);queuePoll=null;
+ if(queueWatch&&queueClient)queueClient.removeChannel(queueWatch).catch(()=>{});queueWatch=null;
+ queueClient=null;queueRole="";queueDept="";remoteRows=[];queueUpdate=null;
+}
+export async function startQueue(sb,{role,department,onUpdate}={}){
+ stopQueue();if(!sb?.from)return;
+ queueClient=sb;queueRole=role||"";queueDept=department||"";queueUpdate=onUpdate;
+ try{await refreshQueue(false)}catch(e){console.warn("진일 발주 최초 조회:",e.message)}
+ if(!queueClient)return;
+ queueWatch=sb.channel("jinil-v81-queue-"+Math.random().toString(36).slice(2))
+  .on("postgres_changes",{schema:"public",table:"jinil_dispatches",event:"*"},()=>void refreshQueue(true).catch(e=>console.warn("발주 동기화:",e.message))).subscribe();
+ queuePoll=setInterval(()=>{if(!document.hidden)void refreshQueue(true).catch(e=>console.warn("발주 재조회:",e.message))},30000);
+ if(queueUpdate)queueUpdate();
 }
