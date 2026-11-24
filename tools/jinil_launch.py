@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Launch the JINIL V78 development preview locally and open the default browser.
+"""Launch the JINIL V79 development preview locally and open the default browser.
 
 Development-only: binds to 127.0.0.1. Not a public production server.
 """
@@ -15,9 +15,9 @@ import webbrowser
 
 def main():
     root = Path(__file__).resolve().parent.parent
-    relative = Path("진일_통합관리") / "11_1_v78_진일_통합_실시간_관리_시스템_재작업.html"
+    relative = Path("진일_통합관리") / "11_1_v79_진일_통합_실시간_관리_시스템_재작업.html"
     if not (root / relative).is_file():
-        print("[ERROR] V78 HTML file was not found.", flush=True)
+        print("[ERROR] V79 HTML file was not found.", flush=True)
         print("Expected:", root / relative, flush=True)
         print("Keep all folders from the ZIP together.", flush=True)
         return 1
@@ -41,7 +41,7 @@ def main():
     )
 
     print("=" * 60, flush=True)
-    print("JINIL V78 - LOCAL PREVIEW", flush=True)
+    print("JINIL V79 - LOCAL PREVIEW", flush=True)
     print("Folder:", root, flush=True)
     print("URL:", url, flush=True)
     print("Browser opens automatically. Keep this window open.", flush=True)
