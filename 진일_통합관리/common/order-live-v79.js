@@ -56,7 +56,7 @@ export function render(container,{feature,blockId}){
    if(check.error)throw check.error;
    if(check.data?.length)throw Error("이 발주는 이미 일부 또는 전체 부서에 송부됐습니다. 중복 전송하지 마세요.");
    const rows=await sendOrder(c.client,{orderId:saved.id,recipients:ds});
-   if(live()){saved=null;get(host,"v79-saved").textContent="전송 완료";report(rows.length+"개 부서에 송부됐습니다. 알림과 수신 부서의 대기 상태가 생성됩니다.");await reload();}
+   if(live()){saved=null;get(host,"v79-saved").textContent="전송 완료";report(rows.length+"개 부서에 송부됐습니다. 알림과 수신 부서의 대기 상태가 생성됩니다.");setBusy(false);await reload();}
   }catch(e){report("송부 중단: "+e.message+" / 서버 기록 확인 전 재시도하지 마세요.")}finally{if(live())disable(false)}
  }
  function show(){
