@@ -2905,6 +2905,59 @@ function renderGeneralOrders(panel,dept){
   return all.sort((a,b)=>String(a.createdISO||a.createdAt||a.id||'').localeCompare(String(b.createdISO||b.createdAt||b.id||'')));};
  const detailDialog=el('dialog','order-dialog jinil-general-orders-dialog jinil-v15-detail-dialog');const modal=el('div','modal');detailDialog.append(modal);root.append(detailDialog);
  const detailLine=(parent,label,value)=>{const line=el('div','order-info');line.append(el('dt','',label),el('dd','',String(value??'—')));parent.append(line)};
+
+ // V81 general affairs order edit: isolated modal; existing cancel handler is unchanged.
+ const canEditOrder=()=>dept==='general'&&jinilLiveDepartment==='총무부'&&!!loggedEmail&&document.body.classList.contains('jinil-live-authorized');
+ const openOrderEdit=o=>{
+  if(!canEditOrder())return;
+  const dialog=el('dialog','order-dialog jinil-general-orders-dialog jinil-v15-detail-dialog');
+  const panel=el('div','modal');dialog.append(panel);panel.append(el('h2','','발주 수정'));
+  const serverLinked=!!(o.jinilServerDispatchId||o.jinilServerOrderId||o.__jinilRemoteOnly||o.dispatchState==='sent');
+  const locked=serverLinked||o.status==='done'||o.status==='cancelled';
+  const fields=['company','phone','deliveryMethod','deliveryAddress','dueDate','memo','items'];
+  const snapshot=x=>JSON.parse(JSON.stringify(Object.fromEntries(fields.map(k=>[k,x[k]??(k==='items'?[]:'')]))));
+  const before=snapshot(o),draft=snapshot(o);
+  panel.append(el('p','','발주번호: '+String(o.orderNo||o.id)+' · '+statusName(o.status)));
+  const form=el('form','');panel.append(form);
+  const grid=el('div','');grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px';
+  form.append(grid);
+  const field=(parent,label,obj,key,type='text',required=false)=>{
+   const wrap=el('label','');wrap.style.cssText='display:grid;gap:5px;font:inherit;min-width:0';wrap.append(el('span','',label));
+   const input=el(type==='textarea'?'textarea':type==='select'?'select':'input','');if(type!=='textarea'&&type!=='select')input.type=type;
+   if(type==='select'){for(const [val,name] of [['','선택'],['cargo','화물'],['parcel','택배']]){const option=el('option','',name);option.value=val;input.append(option)}if(obj[key]&&!['cargo','parcel'].includes(obj[key])){const extra=el('option','',String(obj[key]));extra.value=obj[key];input.append(extra)}}
+   input.value=obj[key]??'';input.required=required;input.disabled=locked;input.style.cssText='width:100%;padding:8px;font:inherit;border:1px solid #dbe5de;border-radius:7px;background:transparent;color:inherit';
+   input.addEventListener('input',()=>{obj[key]=type==='number'&&typeof obj[key]==='number'?Number(input.value):input.value});
+   wrap.append(input);parent.append(wrap);return input;
+  };
+  field(grid,'업체명',draft,'company','text',true);field(grid,'전화번호',draft,'phone','tel');field(grid,'납품예정일',draft,'dueDate','date');field(grid,'발송 방법',draft,'deliveryMethod','select');field(grid,'발송 주소',draft,'deliveryAddress');
+  const memo=field(grid,'특이사항',draft,'memo','textarea');memo.rows=3;
+  form.append(el('h3','','발주 품목'));
+  draft.items.forEach((item,i)=>{
+   const card=el('section','test-card');card.style.margin='10px 0';card.append(el('h3','','품목 '+(i+1)));
+   const itemGrid=el('div','');itemGrid.style.cssText=grid.style.cssText;card.append(itemGrid);
+   field(itemGrid,'소재',item,'material','text',true);field(itemGrid,'메모',item,'memo');
+   const cuts=Array.isArray(item.cuts)&&item.cuts.length?item.cuts:[item];
+   cuts.forEach((cut,j)=>{const cutGrid=el('div','');cutGrid.style.cssText=grid.style.cssText;card.append(el('p','',j?'절단 '+j:'규격 / 수량'),cutGrid);
+    field(cutGrid,'규격',cut,'spec','text',true);const qty=field(cutGrid,'수량',cut,'quantity','number',true);qty.min='0.000001';qty.step='any';field(cutGrid,'단위',cut,'unit');});
+   form.append(card);
+  });
+  const message=el('p','test-note',serverLinked?'발송된 발주는 서버 원본과 부서 동기화 정책 검증 후 저장할 수 있습니다.':locked?'완료·취소 발주의 수정 권한은 별도 확정이 필요합니다.':'발주번호와 상태는 변경되지 않습니다.');form.append(message);
+  const buttons=el('div','test-actions');const save=el('button','primary','수정 저장');save.type='submit';save.disabled=locked;const close=el('button','','닫기');close.type='button';close.onclick=()=>dialog.close();buttons.append(save,close);form.append(buttons);
+  form.onsubmit=e=>{
+   e.preventDefault();if(!canEditOrder()||locked||!form.reportValidity())return;
+   const data=OrderRepository.read(),current=(data[o._sourceKey]?.orders||[]).find(x=>String(x.id)===String(o.id));
+   if(!current||current.jinilServerDispatchId||current.jinilServerOrderId||current.__jinilRemoteOnly||current.dispatchState==='sent'||['done','cancelled'].includes(current.status)||JSON.stringify(snapshot(current))!==JSON.stringify(before)){message.textContent='발주가 변경되었거나 수정할 수 없습니다. 닫고 새로 조회하세요.';return}
+   if(JSON.stringify(draft)===JSON.stringify(before)){dialog.close();return}
+   const at=new Date().toISOString(),eventId=globalThis.crypto?.randomUUID?.()||at+'-'+Math.random();
+   const history=Array.isArray(current.orderRevisionHistory)?current.orderRevisionHistory:[];
+   const previousDue=current.revisedDueDate||current.dueDate||'';
+   Object.assign(current,draft);current.orderRevisionHistory=[...history,{id:eventId,at,by:loggedEmail,before,after:snapshot(current)}];
+   if(before.dueDate!==draft.dueDate){current.dueRevisionHistory=[...(Array.isArray(current.dueRevisionHistory)?current.dueRevisionHistory:[]),{id:eventId,at,from:previousDue,to:draft.dueDate,by:loggedEmail,seenBy:[]}];current.revisedDueDate=draft.dueDate}
+   if(!saveTestData(data)){message.textContent='저장에 실패했습니다.';return}
+   dialog.close();detailDialog.close();render();
+  };
+  dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
+ };
  const showDetail=o=>{
   modal.replaceChildren();modal.append(el('h2','','발주 상세정보'));
   const info=el('dl','jinil-v29-summary');info.style.margin='0';modal.append(info);
@@ -2949,6 +3002,7 @@ function renderGeneralOrders(panel,dept){
     if(saveTestData(data)){detailDialog.close();render()}
    };
    actions.append(cancelOrder);
+   if(canEditOrder()){const editOrder=el('button','','수정');editOrder.type='button';editOrder.onclick=()=>openOrderEdit(o);actions.append(editOrder)}
   }
   const close=el('button','','닫기');close.type='button';close.onclick=()=>detailDialog.close();actions.append(close);modal.append(actions);detailDialog.showModal();
  };
