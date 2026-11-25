@@ -1,0 +1,37 @@
+name: V81 isolated order policy test
+on:
+  push:
+    branches: [jinil-v81-status-revert-test-20261125]
+    paths:
+      - '.github/workflows/jinil-v81-order-policy-test.yml'
+      - 'tests/jinil-v81/**'
+      - 'supabase/activation_plans/jinil_v81_order_action_lock_NOT_APPLIED.sql'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  postgres:
+    if: github.ref == 'refs/heads/jinil-v81-status-revert-test-20261125'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      db:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: fixture-only
+          POSTGRES_DB: fixture
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Test only synthetic records on temporary PostgreSQL
+        env:
+          PGPASSWORD: fixture-only
+        run: |
+          set -eu
+          export PGHOST=127.0.0.1 PGUSER=postgres PGDATABASE=fixture
+          psql -v ON_ERROR_STOP=1 -f tests/jinil-v81/fixture.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/activation_plans/jinil_v81_completion_revert_original_reference.sql
+          psql -v ON_ERROR_STOP=1 -c 'CREATE TRIGGER jinil_dispatch_guard_v1 BEFORE INSERT OR UPDATE ON public.jinil_dispatches FOR EACH ROW EXECUTE FUNCTION public.jinil_guard_dispatch_v1()'
+          psql -v ON_ERROR_STOP=1 -f supabase/activation_plans/jinil_v81_order_action_lock_NOT_APPLIED.sql
+          psql -v ON_ERROR_STOP=1 -f tests/jinil-v81/assertions.sql
