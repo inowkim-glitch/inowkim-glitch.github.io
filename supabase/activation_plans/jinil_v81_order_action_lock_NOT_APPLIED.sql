@@ -75,8 +75,8 @@ ALTER TABLE public.jinil_dispatches ADD CONSTRAINT jinil_dispatches_status_check
 CREATE FUNCTION jinil_private.commit_order_action(p_order uuid,p_action text,p_token uuid,p_patch jsonb,p_before jsonb)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $commit$
 DECLARE old_payload jsonb; next_payload jsonb; old_fields jsonb; new_fields jsonb;
-DECLARE allowed text[]:=ARRAY['company','phone','deliveryMethod','deliveryAddress','dueDate','memo','items'];
-DECLARE event jsonb; changed_at timestamptz:=clock_timestamp();
+ allowed text[]:=ARRAY['company','phone','deliveryMethod','deliveryAddress','dueDate','memo','items'];
+ event jsonb; changed_at timestamptz:=clock_timestamp();
 BEGIN
  IF auth.uid() IS NULL OR NOT EXISTS (SELECT 1 FROM public.profiles p WHERE p.id=auth.uid() AND p.department IN ('총무부','본사 총무') AND p.role IN ('staff','super_admin')) THEN RAISE EXCEPTION '총무과만 수정·취소할 수 있습니다.'; END IF;
  IF p_action IS NULL OR p_action NOT IN ('edit','cancel') THEN RAISE EXCEPTION 'Invalid action'; END IF;
