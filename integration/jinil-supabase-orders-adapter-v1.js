@@ -59,11 +59,13 @@ export async function loadDepartmentQueue(sb,{department,status=null}){
 export async function transitionOrder(sb,{dispatchId,expectedStatus,nextStatus}){
   const uid=await userId(sb);
   if(!((expectedStatus==='대기'&&nextStatus==='확인')||
-       (expectedStatus==='확인'&&nextStatus==='완료')))
-    throw new Error('대기 → 확인 → 완료 순서대로 처리하세요.');
+       (expectedStatus==='확인'&&nextStatus==='완료')||
+       (expectedStatus==='완료'&&nextStatus==='확인')))
+    throw new Error('대기 → 확인 → 완료 또는 완료 → 확인만 가능합니다.');
   const now=new Date().toISOString();
   const patch={status:nextStatus,updated_by:uid};
-  if(nextStatus==='확인') patch.confirmed_at=now;
+  if(expectedStatus==='대기'&&nextStatus==='확인') patch.confirmed_at=now;
+  if(expectedStatus==='완료'&&nextStatus==='확인') patch.completed_at=null;
   if(nextStatus==='완료') patch.completed_at=now;
   const rows=ok(await sb.from('jinil_dispatches').update(patch)
     .eq('id',dispatchId).eq('status',expectedStatus)

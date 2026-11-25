@@ -99,7 +99,13 @@ export function stripRemote(data){
 }
 export async function advanceStatus(sb,order,next){
  if(!order?.jinilServerDispatchId)throw Error("서버 발주 정보가 없습니다.");
- if(next!=="done")throw Error("서버의 완료 취소는 현재 DB 상태 규칙에서 허용되지 않습니다. 서버 원본은 변경하지 않았습니다.");
+ // Existing V81 completion-cancel button sends "working"; map it to confirmed, not waiting.
+ if(next==="working"&&order.status==="done"){
+  await transitionOrder(sb,{dispatchId:order.jinilServerDispatchId,expectedStatus:"완료",nextStatus:"확인"});
+  await refreshQueue(false);
+  return true;
+ }
+ if(next!=="done")throw Error("완료 상태만 확인으로 되돌릴 수 있습니다.");
  if(order.status==="working")await transitionOrder(sb,{dispatchId:order.jinilServerDispatchId,expectedStatus:"대기",nextStatus:"확인"});
  else if(order.status!=="checked")throw Error("완료 처리할 수 없는 상태입니다.");
  await transitionOrder(sb,{dispatchId:order.jinilServerDispatchId,expectedStatus:"확인",nextStatus:"완료"});
