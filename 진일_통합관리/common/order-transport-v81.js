@@ -58,7 +58,7 @@ export async function sendPending(sb,pending) {
 
 /* Server queue read overlay for ORIGINAL V72 UI. Never save remote-only rows locally. */
 let queueClient=null,queueRole="",queueDept="",queueWatch=null,queuePoll=null,queueGeneration=0,remoteRows=[],queueUpdate=null;
-const keysByDept={"생산부":"mc","가공부":"process","테프론부":"teflon"},statusMap={"대기":"working","확인":"checked","완료":"done"};
+const keysByDept={"생산부":"mc","가공부":"process","테프론부":"teflon"},statusMap={"대기":"working","확인":"checked","완료":"done","취소":"cancelled"};
 function scope(role,department){let dept=departmentOf(department);return role==="super_admin"||dept==="총무부"?["생산부","가공부","테프론부"]:validDepartments.has(dept)?[dept]:["생산부","가공부","테프론부"]}
 export async function refreshQueue(notify=true){
  if(!queueClient)return [];
@@ -77,7 +77,7 @@ export function mergeRead(data){
     String(o.jinilServerDispatchId||"")===String(row.id)||
     (String(o.jinilServerOrderId||"")===String(row.order_id)&&departmentOf(o.department)===row.department));
   const status=statusMap[row.status]||"working";
-  if(existing){existing.status=status;existing.dispatchState="sent";existing.jinilServerDispatchId=row.id;continue}
+  if(existing){const summary=row.order_summary||{};for(const k of ["company","phone","deliveryMethod","deliveryAddress","dueDate","memo","items","revisedDueDate","dueRevisionHistory","orderRevisionHistory"])if(Object.hasOwn(summary,k))existing[k]=summary[k];existing.status=status;existing.dispatchState="sent";existing.jinilServerDispatchId=row.id;existing.jinilServerOrderId=row.order_id;continue}
   if(!data[key])data[key]={orders:[],stock:Array(10).fill("")};
   if(!Array.isArray(data[key].orders))data[key].orders=[];
   const p=row.order_summary&&typeof row.order_summary==="object"?row.order_summary:{};
@@ -127,4 +127,23 @@ export async function startQueue(sb,{role,department,onUpdate}={}){
   .on("postgres_changes",{schema:"public",table:"jinil_dispatches",event:"*"},()=>void refreshQueue(true).catch(e=>console.warn("발주 동기화:",e.message))).subscribe();
  queuePoll=setInterval(()=>{if(!document.hidden)void refreshQueue(true).catch(e=>console.warn("발주 재조회:",e.message))},30000);
  if(queueUpdate)queueUpdate();
+}
+
+export async function readOrderAction(sb,orderId){
+ if(!orderId)throw Error("서버 발주 식별자가 없습니다.");
+ const r=await sb.from("jinil_order_action_locks").select("action,expires_at").eq("order_id",orderId).maybeSingle();
+ if(r.error)throw r.error;
+ return r.data&&Date.parse(r.data.expires_at)>Date.now()?r.data.action:null;
+}
+export async function beginOrderAction(sb,orderId,action,onLost=()=>{}){
+ if(!orderId||!["edit","cancel"].includes(action))throw Error("발주 작업 정보가 없습니다.");
+ const token=crypto.randomUUID();
+ const rpc=async(op)=>{const r=await sb.rpc("jinil_order_action_lease",{p_order:orderId,p_action:action,p_token:token,p_op:op});if(r.error)throw r.error;return r.data};
+ await rpc("acquire");
+ let closed=false,busy=false;
+ const timer=setInterval(async()=>{if(closed||busy)return;busy=true;try{await rpc("renew")}catch(e){closed=true;clearInterval(timer);onLost(e)}finally{busy=false}},20000);
+ return {
+  async commit(patch=null,before=null){if(closed)throw Error("작업 잠금이 종료되었습니다.");const r=await sb.rpc("jinil_commit_order_action",{p_order:orderId,p_action:action,p_token:token,p_patch:patch,p_before:before});if(r.error)throw r.error;closed=true;clearInterval(timer);await refreshQueue(false).catch(e=>console.warn("발주 재조회 필요",e));},
+  async release(){clearInterval(timer);if(closed)return;closed=true;await rpc("release")}
+ };
 }

@@ -2785,13 +2785,21 @@ function renderTestModule(panel,kind,dept){
    const next=isDone?'working':'done';
    const statusName=isDone?'완료 취소':'완료';
    makeButton('닫기',close,'jinil-order-close');
-   makeButton(statusName,()=>{
+   const statusButton=makeButton(statusName,()=>{
     const msg=isDone?'완료 상태를 취소하고 미완료로 되돌리시겠습니까?':'이 발주 작업을 완료 처리하시겠습니까?';
     jinilConfirmModal(msg,async()=>{
      if(await updateStatus(id,next,o._sourceDepartment))close();
      else jinilNoticeModal('상태 변경에 실패했습니다. 다시 시도해 주세요.');
     });
    },isDone?'jinil-order-status-revert':'jinil-order-status-green');
+   if(o.jinilServerDispatchId){
+    const notice=el('p','test-note','');notice.hidden=true;notice.setAttribute('role','status');actions.append(notice);
+    let checking=false;const checkLock=async()=>{if(checking||!statusButton.isConnected)return;checking=true;
+     try{const action=await window.JinilOrderTransportV81.readOrderAction(liveClient,o.jinilServerOrderId);if(!statusButton.isConnected)return;statusButton.disabled=!!action;notice.hidden=!action;notice.textContent=action==='edit'?'총무과에서 현재 발주 수정 작업 중입니다.':action==='cancel'?'총무과에서 현재 발주 취소 작업 중입니다.':''}
+     catch(e){if(statusButton.isConnected){statusButton.disabled=true;notice.hidden=false;notice.textContent='발주 작업 상태를 확인할 수 없습니다. 잠시 후 다시 확인해 주세요.'}}finally{checking=false}};
+    statusButton.disabled=true;void checkLock();const timer=setInterval(()=>{if(!dialog.open||!statusButton.isConnected){clearInterval(timer);return}void checkLock()},2000);
+    dialog.addEventListener('close',()=>clearInterval(timer),{once:true});
+   }
    if(!dialog.open)dialog.showModal();
   }
   search.oninput=drawList;drawList();
@@ -2908,12 +2916,14 @@ function renderGeneralOrders(panel,dept){
 
  // V81 general affairs order edit: isolated modal; existing cancel handler is unchanged.
  const canEditOrder=()=>dept==='general'&&jinilLiveDepartment==='총무부'&&!!loggedEmail&&document.body.classList.contains('jinil-live-authorized');
- const openOrderEdit=o=>{
+ const openOrderEdit=async o=>{
   if(!canEditOrder())return;
   const dialog=el('dialog','order-dialog jinil-general-orders-dialog jinil-v15-detail-dialog');
   const panel=el('div','modal');dialog.append(panel);panel.append(el('h2','','발주 수정'));
   const serverLinked=!!(o.jinilServerDispatchId||o.jinilServerOrderId||o.__jinilRemoteOnly||o.dispatchState==='sent');
-  const locked=serverLinked||o.status==='done'||o.status==='cancelled';
+  const locked=o.status==='done'||o.status==='cancelled';
+  let lease=null,leaseLost=false,submitting=false;
+  if(serverLinked&&!locked){try{lease=await window.JinilOrderTransportV81.beginOrderAction(liveClient,o.jinilServerOrderId,'edit',()=>{leaseLost=true;dialog.querySelectorAll('input,textarea,select,button[type=submit]').forEach(x=>x.disabled=true);alert('수정 작업 잠금이 종료되었습니다. 창을 닫고 다시 열어 주세요.')})}catch(e){alert('발주 수정 시작 실패: '+String(e.message||e));return}}
   const fields=['company','phone','deliveryMethod','deliveryAddress','dueDate','memo','items'];
   const snapshot=x=>JSON.parse(JSON.stringify(Object.fromEntries(fields.map(k=>[k,x[k]??(k==='items'?[]:'')]))));
   const before=snapshot(o),draft=snapshot(o);
@@ -2941,10 +2951,12 @@ function renderGeneralOrders(panel,dept){
     field(cutGrid,'규격',cut,'spec','text',true);const qty=field(cutGrid,'수량',cut,'quantity','number',true);qty.min='0.000001';qty.step='any';field(cutGrid,'단위',cut,'unit');});
    form.append(card);
   });
-  const message=el('p','test-note',serverLinked?'발송된 발주는 서버 원본과 부서 동기화 정책 검증 후 저장할 수 있습니다.':locked?'완료·취소 발주의 수정 권한은 별도 확정이 필요합니다.':'발주번호와 상태는 변경되지 않습니다.');form.append(message);
+  const message=el('p','test-note',locked?'완료·취소 발주의 수정 권한은 별도 확정이 필요합니다.':'발주번호와 상태는 변경되지 않습니다.');form.append(message);
   const buttons=el('div','test-actions');const save=el('button','primary','수정 저장');save.type='submit';save.disabled=locked;const close=el('button','','닫기');close.type='button';close.onclick=()=>dialog.close();buttons.append(save,close);form.append(buttons);
-  form.onsubmit=e=>{
-   e.preventDefault();if(!canEditOrder()||locked||!form.reportValidity())return;
+  form.onsubmit=async e=>{
+   e.preventDefault();if(!canEditOrder()||locked||leaseLost||submitting||!form.reportValidity())return;
+   if(lease){if(JSON.stringify(draft)===JSON.stringify(before)){dialog.close();return}submitting=true;save.disabled=true;close.disabled=true;
+    try{await lease.commit(draft,before);dialog.close();detailDialog.close();render()}catch(e){message.textContent='서버 저장 실패: '+String(e.message||e)}finally{submitting=false;save.disabled=leaseLost;close.disabled=false}return}
    const data=OrderRepository.read(),current=(data[o._sourceKey]?.orders||[]).find(x=>String(x.id)===String(o.id));
    if(!current||current.jinilServerDispatchId||current.jinilServerOrderId||current.__jinilRemoteOnly||current.dispatchState==='sent'||['done','cancelled'].includes(current.status)||JSON.stringify(snapshot(current))!==JSON.stringify(before)){message.textContent='발주가 변경되었거나 수정할 수 없습니다. 닫고 새로 조회하세요.';return}
    if(JSON.stringify(draft)===JSON.stringify(before)){dialog.close();return}
@@ -2956,7 +2968,8 @@ function renderGeneralOrders(panel,dept){
    if(!saveTestData(data)){message.textContent='저장에 실패했습니다.';return}
    dialog.close();detailDialog.close();render();
   };
-  dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
+  dialog.addEventListener('cancel',e=>{if(submitting)e.preventDefault()});
+  dialog.addEventListener('close',()=>{if(lease)void lease.release().catch(e=>console.warn('잠금 해제:',e));dialog.remove()},{once:true});document.body.append(dialog);dialog.showModal();
  };
  const showDetail=o=>{
   modal.replaceChildren();modal.append(el('h2','','발주 상세정보'));
@@ -2992,7 +3005,16 @@ function renderGeneralOrders(panel,dept){
   // 발주 취소 권한은 총무부의 별도 '발주목록' 화면에만 둡니다.
   if(!v49Dept(dept)&&o.status!=='cancelled'){
    const cancelOrder=el('button','','발주 취소');cancelOrder.type='button';
-   cancelOrder.onclick=()=>{
+   cancelOrder.onclick=async()=>{
+    if(o.jinilServerOrderId||o.jinilServerDispatchId||o.dispatchState==='sent'){
+     if(!canEditOrder()){alert('총무과만 발주를 취소할 수 있습니다.');return}
+     let lease;cancelOrder.disabled=true;
+     try{lease=await window.JinilOrderTransportV81.beginOrderAction(liveClient,o.jinilServerOrderId,'cancel');
+      if(!window.confirm('발주번호: '+String(o.orderNo||o.id)+'\n이 발주를 취소하시겠습니까?\n취소 이력은 보관됩니다.'))return;
+      await lease.commit();detailDialog.close();render();
+     }catch(e){alert('발주 취소 실패: '+String(e.message||e))}
+     finally{if(lease)await lease.release().catch(e=>console.warn('잠금 해제:',e));cancelOrder.disabled=false}return
+    }
     if(!window.confirm('발주번호: '+String(o.orderNo||o.id)+'\n업체명: '+String(o.company||'')+'\n\n이 발주를 취소하시겠습니까?\n취소된 발주는 삭제되지 않고 취소 목록에 보관됩니다.'))return;
     const data=testData(),orders=data?.[o._department]?.orders||data?.[dept]?.orders;
     const current=(Array.isArray(orders)?orders.find(x=>String(x.id)===String(o.id)):null)||Object.values(data).flatMap(v=>Array.isArray(v?.orders)?v.orders:[]).find(x=>String(x.id)===String(o.id));
