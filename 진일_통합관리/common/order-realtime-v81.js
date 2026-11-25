@@ -1,5 +1,5 @@
 /* Jinil V81: headless order alerts; no permanent new buttons or dashboard layout changes. */
-let client=null,uid=null,channel=null,timer=null,observer=null,rows=[],known=new Set(),initialized=false,centralTimer=null;
+let client=null,uid=null,channel=null,timer=null,observer=null,rows=[],known=new Map(),initialized=false,centralTimer=null;
 const mapId={general:"총무부",mc:"생산부",process:"가공부",teflon:"테프론부"};
 const byId=x=>document.getElementById(x);
 const normalized=x=>x==="생산부"?"생산부":String(x||"");
@@ -25,7 +25,7 @@ async function reload(show){
  if(!uid||!client)return;const me=uid;
  const r=await client.from("jinil_notifications").select("id,user_id,department,title,body,read_at,created_at").eq("user_id",me).order("created_at",{ascending:false}).limit(100);
  if(r.error){console.warn("진일 발주 알림 수신:",r.error.message);return}if(uid!==me)return;
- for(const n of r.data||[]){if(!known.has(n.id)){known.add(n.id);if(show&&initialized&&!n.read_at)notify(n)}}
+ for(const n of r.data||[]){const stamp=JSON.stringify([n.created_at,n.title,n.body]);if(known.get(n.id)!==stamp){known.set(n.id,stamp);if(show&&initialized&&!n.read_at)notify(n)}}
  rows=r.data||[];initialized=true;paint();
 }
 async function enterDepartment(blockId){
@@ -45,7 +45,7 @@ function stop(){
 async function start({client:sb,user}){
  if(!sb?.from||!user?.id)return;stop();client=sb;uid=user.id;addStyle();
  await reload(false);if(!uid)return;
- channel=client.channel("jinil-v81-alert-"+uid).on("postgres_changes",{schema:"public",table:"jinil_notifications",event:"INSERT",filter:"user_id=eq."+uid},()=>void reload(true)).on("postgres_changes",{schema:"public",table:"jinil_notifications",event:"UPDATE",filter:"user_id=eq."+uid},()=>void reload(false)).subscribe();
+ channel=client.channel("jinil-v81-alert-"+uid).on("postgres_changes",{schema:"public",table:"jinil_notifications",event:"INSERT",filter:"user_id=eq."+uid},()=>void reload(true)).on("postgres_changes",{schema:"public",table:"jinil_notifications",event:"UPDATE",filter:"user_id=eq."+uid},()=>void reload(true)).subscribe();
  timer=setInterval(()=>{if(!document.hidden)void reload(true)},30000);
  observer=new MutationObserver(paint);
  for(const element of [byId("canvas"),byId("sourceList")])if(element)observer.observe(element,{childList:true,subtree:true});

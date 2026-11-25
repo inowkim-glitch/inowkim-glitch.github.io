@@ -2915,7 +2915,7 @@ function renderGeneralOrders(panel,dept){
  const detailLine=(parent,label,value)=>{const line=el('div','order-info');line.append(el('dt','',label),el('dd','',String(value??'—')));parent.append(line)};
 
  // V81 general affairs order edit: isolated modal; existing cancel handler is unchanged.
- const canEditOrder=()=>dept==='general'&&jinilLiveDepartment==='총무부'&&!!loggedEmail&&document.body.classList.contains('jinil-live-authorized');
+ const canEditOrder=()=>dept==='general'&&jinilLiveDepartment==='총무부'&&['staff','super_admin'].includes(jinilLiveRole)&&!!loggedEmail&&document.body.classList.contains('jinil-live-authorized');
  const openOrderEdit=async o=>{
   if(!canEditOrder())return;
   const dialog=el('dialog','order-dialog jinil-general-orders-dialog jinil-v15-detail-dialog');
@@ -3010,7 +3010,7 @@ function renderGeneralOrders(panel,dept){
      if(!canEditOrder()){alert('총무과만 발주를 취소할 수 있습니다.');return}
      let lease;cancelOrder.disabled=true;
      try{lease=await window.JinilOrderTransportV81.beginOrderAction(liveClient,o.jinilServerOrderId,'cancel');
-      if(!window.confirm('발주번호: '+String(o.orderNo||o.id)+'\n이 발주를 취소하시겠습니까?\n취소 이력은 보관됩니다.'))return;
+      if(!window.confirm('발주번호: '+String(o.orderNo||o.id)+'\n업체명: '+String(o.company||'')+'\n\n이 발주를 취소하시겠습니까?\n취소된 발주는 삭제되지 않고 취소 목록에 보관됩니다.'))return;
       await lease.commit();detailDialog.close();render();
      }catch(e){alert('발주 취소 실패: '+String(e.message||e))}
      finally{if(lease)await lease.release().catch(e=>console.warn('잠금 해제:',e));cancelOrder.disabled=false}return

@@ -140,12 +140,13 @@ begin
   raise exception '총무과 또는 다른 담당자가 발주 작업 중입니다. 다시 시도해 주세요.';
  end if;
  -- Only the checked private definer function may write revised summaries/cancellation.
- if current_user=(select pg_get_userbyid(proowner) from pg_proc where oid='jinil_private.commit_order_action(uuid,text,uuid,jsonb,jsonb)'::regprocedure)
-    and exists(select 1 from public.jinil_order_action_locks l where l.order_id=old.order_id and l.owner_id=auth.uid() and l.expires_at>clock_timestamp()
+ if current_user=(select pg_get_userbyid(proowner) from pg_proc where oid='jinil_private.commit_order_action(uuid,text,uuid,jsonb,jsonb)'::regprocedure) then
+  if exists(select 1 from public.jinil_order_action_locks l where l.order_id=old.order_id and l.owner_id=auth.uid() and l.expires_at>clock_timestamp()
        and ((l.action='edit' and new.status=old.status) or (l.action='cancel' and new.status='취소')))
     and new.id=old.id and new.order_id=old.order_id and new.department=old.department and new.sent_at=old.sent_at
     and new.confirmed_at is not distinct from old.confirmed_at and new.completed_at is not distinct from old.completed_at then
    new.updated_by=auth.uid(); return new;
+  end if;
  end if;
  if exists(select 1 from public.jinil_order_action_locks l where l.order_id=old.order_id and l.expires_at>clock_timestamp()) then
   raise exception '총무과에서 현재 발주 수정 또는 취소 작업 중입니다.';
